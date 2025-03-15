@@ -36,7 +36,7 @@ const AdminDashboard = () => {
   const filteredPackages = packages.filter(pkg =>
     pkg.name.toLowerCase().includes(search.toLowerCase())
   );
-  
+
   if (loading) return <div>Loading dashboard11...</div>;
 
   return (
