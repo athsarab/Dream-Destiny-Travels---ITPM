@@ -9,16 +9,18 @@ import EditPackagePage from './pages/EditPackagePage';
 function App() {
   return (
     <Router>
-      <Navbar />
-      <main className="container">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/edit/:id" element={<EditPackagePage />} />
-          <Route path="/package/:id" element={<PackagePage />} />
-        </Routes>
-      </main>
-      <Footer />
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/edit/:id" element={<EditPackagePage />} />
+            <Route path="/package/:id" element={<PackagePage />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
     </Router>
   );
 }

@@ -26,23 +26,32 @@ const HomePage = () => {
     pkg.location.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) return <div>Loading packages...</div>;
-
   return (
-    <div className="home-page">
-      <h1>Welcome to Dream Destiny Travel</h1>
-      <div className="search-bar">
-        <input
-          type="text"
-          placeholder="Search by name or location..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-      <div className="packages-grid">
-        {filteredPackages.map(pkg => (
-          <PackageCard key={pkg._id} package={pkg} />
-        ))}
+    <div className="flex-1 bg-dark-100">
+      <div className="container mx-auto h-full flex flex-col px-4 py-6">
+        <h1 className="text-4xl font-bold text-center text-white mb-8">
+          Discover Your Next Adventure
+        </h1>
+        <div className="max-w-xl mx-auto w-full mb-8">
+          <input
+            type="text"
+            placeholder="Search by name or location..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full px-4 py-3 rounded-lg border border-dark-300 bg-dark-200 text-white placeholder-dark-400 focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+          />
+        </div>
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-y-auto">
+          {loading ? (
+            <div className="col-span-full text-center text-dark-500">
+              Loading amazing destinations...
+            </div>
+          ) : (
+            filteredPackages.map(pkg => (
+              <PackageCard key={pkg._id} package={pkg} />
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

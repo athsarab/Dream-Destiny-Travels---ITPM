@@ -3,22 +3,32 @@ import { Link } from 'react-router-dom';
 
 const PackageCard = ({ package: pkg }) => {
   return (
-    <div className="package-card">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden transform transition-transform hover:scale-105">
       {pkg.imageUrl && (
-        <img src={pkg.imageUrl} alt={pkg.name} className="package-image" />
+        <img 
+          src={pkg.imageUrl} 
+          alt={pkg.name} 
+          className="w-full h-56 object-cover"
+        />
       )}
-      <div className="package-content">
-        <h3 className="package-title">{pkg.name}</h3>
-        <p className="package-description">{pkg.description.substring(0, 100)}...</p>
-        <div className="package-details">
-          <span className="package-duration">Duration: {pkg.duration}</span>
-          <span className="package-price">Price: ${pkg.price}</span>
+      <div className="p-6">
+        <h3 className="text-xl font-bold text-secondary-800 mb-2">{pkg.name}</h3>
+        <p className="text-secondary-600 mb-4 line-clamp-2">{pkg.description}</p>
+        <div className="space-y-2 mb-4">
+          <p className="text-secondary-700 flex items-center">
+            <span className="w-24 font-semibold">Duration:</span> 
+            <span className="text-primary-600">{pkg.duration}</span>
+          </p>
+          <p className="text-secondary-700 flex items-center">
+            <span className="w-24 font-semibold">Price:</span>
+            <span className="text-accent font-bold">${pkg.price}</span>
+          </p>
         </div>
         <Link 
           to={`/package/${pkg._id}`} 
-          className="btn btn-primary view-details-btn"
+          className="block w-full text-center bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition-colors font-semibold"
         >
-          View Details
+          Explore Package
         </Link>
       </div>
     </div>
