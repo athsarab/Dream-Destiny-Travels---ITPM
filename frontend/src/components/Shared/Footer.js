@@ -24,7 +24,7 @@ const Footer = () => {
             <div className="space-y-4">
               <p className="text-gray-400">
                 <span className="block">Email: info@dreamdestiny.com</span>
-                <span className="block">Phone: +1 234 567 8900</span>
+                <span className="block">Phone: +94 717325275</span>
               </p>
             </div>
           </div>
