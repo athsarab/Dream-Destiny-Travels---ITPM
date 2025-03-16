@@ -46,7 +46,7 @@ const AdminDashboard = () => {
   if (loading) return <div>Loading dashboard...</div>;
 
   return (
-    <div className="min-h-screen bg-dark-100 p-6">
+    <div className="min-h-screen bg-dark-100 p-6 pt-24">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-white">Package Management Dashboard</h1>

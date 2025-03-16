@@ -29,8 +29,8 @@ const PackagePage = () => {
   if (!package_) return <div>Package not found</div>;
 
   return (
-    <div className="min-h-screen bg-dark-100 text-white p-6">
-      <div className="max-w-4xl mx-auto bg-dark-200 rounded-xl shadow-lg overflow-hidden">
+    <div className="bg-dark-100 text-white p-6 pt-24 min-h-screen overflow-y-auto">
+      <div className="max-w-4xl mx-auto bg-dark-200 rounded-xl shadow-lg overflow-hidden mb-6">
         <h1 className="text-3xl font-bold p-6 border-b border-dark-300">{package_.name}</h1>
         {package_.imageUrl && (
           <img 
