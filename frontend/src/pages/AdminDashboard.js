@@ -41,7 +41,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-dashboard">
-      <h1 className="dashboard-title">Admin Dashboard</h1>
+      <h1 className="dashboard-title">Package manager Dashboard</h1>
       <div className="search-container">
         <input
           type="text"
