@@ -50,12 +50,20 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-white">Package Management Dashboard</h1>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            {showForm ? 'Close Form' : 'Create Package'}
-          </button>
+          <div className="flex space-x-4">
+            <button
+              onClick={() => navigate('/admin/custom-packages')}
+              className="bg-accent text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+            >
+              Manage Custom Packages
+            </button>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              {showForm ? 'Close Form' : 'Create Package'}
+            </button>
+          </div>
         </div>
         
         {showForm && (

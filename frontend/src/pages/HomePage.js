@@ -61,7 +61,7 @@ const HomePage = () => {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredPackages.slice(0, 3).map(pkg => (
-                    <div key={pkg._id} className="bg-dark-200 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div key={pkg._id} className="bg-dark-200/30 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
                       {pkg.imageUrl && (
                         <div className="w-full h-48 overflow-hidden">
                           <img 
@@ -96,7 +96,7 @@ const HomePage = () => {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredPackages.map(pkg => (
-                    <div key={pkg._id} className="bg-dark-200 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div key={pkg._id} className="bg-dark-200/30 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
                       {pkg.imageUrl && (
                         <div className="w-full h-48 overflow-hidden">
                           <img 
