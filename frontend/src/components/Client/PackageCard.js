@@ -6,7 +6,7 @@ const PackageCard = ({ package: pkg }) => {
     <div className="bg-white rounded-xl shadow-lg overflow-hidden transform transition-transform hover:scale-105">
       {pkg.imageUrl && (
         <img 
-          src={pkg.imageUrl} 
+          src={`http://localhost:5000${pkg.imageUrl}`} 
           alt={pkg.name} 
           className="w-full h-56 object-cover"
         />

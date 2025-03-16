@@ -5,6 +5,8 @@ import axios from 'axios';
 const EditPackagePage = () => {
     const [formData, setFormData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [image, setImage] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -22,18 +24,49 @@ const EditPackagePage = () => {
         fetchPackage();
     }, [id]);
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImage(file);
+            setPreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.put(`http://localhost:5000/api/packages/${id}`, formData);
+            const packageData = new FormData();
+            
+            // Append all form data except imageUrl
+            Object.keys(formData).forEach(key => {
+                if (key !== 'imageUrl' && key !== '_id' && key !== '__v') {
+                    packageData.append(key, formData[key]);
+                }
+            });
+            
+            // Append new image if selected
+            if (image) {
+                packageData.append('image', image);
+            }
+
+            await axios.put(`http://localhost:5000/api/packages/${id}`, packageData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            
+            alert('Package updated successfully!');
             navigate('/admin');
         } catch (error) {
             console.error('Error updating package:', error);
+            alert('Failed to update package. Please try again.');
         }
     };
 
     if (loading) return <div>Loading...</div>;
     if (!formData) return <div>Package not found</div>;
+
+    const imageUrl = previewUrl || (formData?.imageUrl ? `http://localhost:5000${formData.imageUrl}` : null);
 
     return (
         <div className="min-h-screen bg-dark-100 py-12 px-4">
@@ -43,6 +76,24 @@ const EditPackagePage = () => {
                 </h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
+                        <div>
+                            <label className="block text-dark-500 font-medium mb-2">Package Image</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="w-full p-3 border border-dark-300 rounded-lg bg-dark-100 text-white"
+                            />
+                            {imageUrl && (
+                                <div className="mt-4">
+                                    <img
+                                        src={imageUrl}
+                                        alt="Package"
+                                        className="w-full max-h-48 object-cover rounded-lg"
+                                    />
+                                </div>
+                            )}
+                        </div>
                         <div>
                             <label className="block text-dark-500 font-medium mb-2">Package Name</label>
                             <input

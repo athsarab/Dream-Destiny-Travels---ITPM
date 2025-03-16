@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const upload = require('../middleware/upload');
 const {
     getPackages,
     getPackage,
@@ -10,8 +11,8 @@ const {
 
 router.get('/', getPackages);
 router.get('/:id', getPackage);
-router.post('/', createPackage);
-router.put('/:id', updatePackage);
+router.post('/', upload.single('image'), createPackage);
+router.put('/:id', upload.single('image'), updatePackage);
 router.delete('/:id', deletePackage);
 
 module.exports = router;

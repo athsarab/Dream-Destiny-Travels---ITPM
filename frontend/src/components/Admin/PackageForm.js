@@ -10,11 +10,35 @@ const PackageForm = ({ onPackageAdded }) => {
     location: '',
     maxPax: ''
   });
+  const [image, setImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/packages', formData);
+      const packageData = new FormData();
+      Object.keys(formData).forEach(key => {
+        packageData.append(key, formData[key]);
+      });
+      if (image) {
+        packageData.append('image', image);
+      }
+
+      const response = await axios.post('http://localhost:5000/api/packages', packageData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      // Clear form and preview after successful submission
       onPackageAdded(response.data);
       setFormData({
         name: '',
@@ -24,8 +48,12 @@ const PackageForm = ({ onPackageAdded }) => {
         location: '',
         maxPax: ''
       });
+      setImage(null);
+      setPreviewUrl(null);
+      
     } catch (error) {
       console.error('Error creating package:', error);
+      alert('Failed to create package. Please try again.');
     }
   };
 
@@ -37,6 +65,27 @@ const PackageForm = ({ onPackageAdded }) => {
     <div className="bg-dark-200 rounded-xl shadow-lg p-8">
       <form onSubmit={handleSubmit} className="space-y-6">
         <h2 className="text-3xl font-bold text-white mb-8">Add New Package</h2>
+        
+        {/* Image Upload Section */}
+        <div className="mb-6">
+          <label className="block text-white mb-2">Package Image</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="w-full p-2 border border-dark-300 rounded-lg bg-dark-100 text-white"
+          />
+          {previewUrl && (
+            <div className="mt-4">
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="w-full max-h-48 object-cover rounded-lg"
+              />
+            </div>
+          )}
+        </div>
+
         <input
           type="text"
           name="name"

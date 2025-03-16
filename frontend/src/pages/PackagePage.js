@@ -34,7 +34,7 @@ const PackagePage = () => {
         <h1 className="text-3xl font-bold p-6 border-b border-dark-300">{package_.name}</h1>
         {package_.imageUrl && (
           <img 
-            src={package_.imageUrl} 
+            src={`http://localhost:5000${package_.imageUrl}`} 
             alt={package_.name} 
             className="w-full h-96 object-cover"
           />

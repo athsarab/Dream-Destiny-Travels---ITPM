@@ -76,26 +76,37 @@ const AdminDashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPackages.map(pkg => (
-            <div key={pkg._id} className="bg-dark-200 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-semibold text-white mb-4">{pkg.name}</h3>
-              <div className="space-y-2 mb-6">
-                <p className="text-dark-500">Location: {pkg.location}</p>
-                <p className="text-accent font-bold">Price: ${pkg.price}</p>
-                <p className="text-dark-500">Duration: {pkg.duration}</p>
-              </div>
-              <div className="flex space-x-4">
-                <button 
-                  onClick={() => navigate(`/admin/edit/${pkg._id}`)}
-                  className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-                >
-                  Edit
-                </button>
-                <button 
-                  onClick={() => handleDelete(pkg._id)}
-                  className="flex-1 bg-error text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Delete
-                </button>
+            <div key={pkg._id} className="bg-dark-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+              {pkg.imageUrl && (
+                <div className="w-full h-48 overflow-hidden">
+                  <img 
+                    src={`http://localhost:5000${pkg.imageUrl}`}
+                    alt={pkg.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="p-6">
+                <h3 className="text-xl font-semibold text-white mb-4">{pkg.name}</h3>
+                <div className="space-y-2 mb-6">
+                  <p className="text-dark-500">Location: {pkg.location}</p>
+                  <p className="text-accent font-bold">Price: ${pkg.price}</p>
+                  <p className="text-dark-500">Duration: {pkg.duration}</p>
+                </div>
+                <div className="flex space-x-4">
+                  <button 
+                    onClick={() => navigate(`/admin/edit/${pkg._id}`)}
+                    className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(pkg._id)}
+                    className="flex-1 bg-error text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
