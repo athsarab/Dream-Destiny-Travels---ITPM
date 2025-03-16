@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PackageCard from '../components/Client/PackageCard';
 import VideoBackground from '../components/Shared/VideoBackground';
+import { Link } from 'react-router-dom';
 
 const HomePage = () => {
   const [packages, setPackages] = useState([]);
@@ -39,14 +40,20 @@ const HomePage = () => {
             Explore amazing destinations and create unforgettable memories with our carefully curated travel packages
           </p>
           
-          <div className="max-w-xl mx-auto w-full mb-12 transform hover:scale-105 transition-transform duration-300">
+          <div className="flex justify-center space-x-4 mb-12">
             <input
               type="text"
               placeholder="Search your dream destination..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-6 py-4 rounded-full border-2 border-white/20 bg-black/30 text-white placeholder-gray-300 focus:ring-2 focus:ring-primary-400 focus:border-transparent shadow-lg backdrop-blur-sm transition-all duration-300"
+              className="max-w-xl w-full px-6 py-4 rounded-full border-2 border-white/20 bg-black/30 text-white placeholder-gray-300 focus:ring-2 focus:ring-primary-400 focus:border-transparent shadow-lg backdrop-blur-sm transition-all duration-300"
             />
+            <Link
+              to="/custom-package"
+              className="px-6 py-4 rounded-full bg-primary-600 text-white hover:bg-primary-700 transition-all duration-300 shadow-lg backdrop-blur-sm flex items-center"
+            >
+              Create Custom Package
+            </Link>
           </div>
 
           {loading ? (

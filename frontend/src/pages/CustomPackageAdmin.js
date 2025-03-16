@@ -15,53 +15,52 @@ const CustomPackageAdmin = () => {
   const fetchCategories = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/custom-packages/categories');
+      console.log('Fetched categories:', response.data); // Add debug log
       setCategories(response.data);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Error fetching categories:', error.response || error);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Validate form data
-      if (!formData.category || !formData.options.length) {
-        alert('Please fill in all required fields');
-        return;
-      }
-
-      // Validate each option
-      const isValid = formData.options.every(opt => 
+      // Validate and clean data
+      const validOptions = formData.options.filter(opt => 
         opt.name && opt.description && opt.price
       );
 
-      if (!isValid) {
-        alert('Please fill in all fields for each option');
+      if (validOptions.length === 0) {
+        alert('Please fill in all fields for at least one option');
         return;
       }
 
-      // Convert price strings to numbers
-      const processedData = {
-        ...formData,
-        options: formData.options.map(opt => ({
-          ...opt,
+      const data = {
+        name: formData.category.trim(), // Changed from category to name
+        options: validOptions.map(opt => ({
+          name: opt.name.trim(),
+          description: opt.description.trim(),
           price: Number(opt.price)
         }))
       };
 
-      const response = await axios.post('http://localhost:5000/api/custom-packages/options', processedData);
-      
+      console.log('Sending data:', data);
+      const response = await axios.post(
+        'http://localhost:5000/api/custom-packages/options', 
+        data
+      );
+
       if (response.data) {
         alert('Options added successfully!');
-        setFormData({ 
-          category: '', 
-          options: [{ name: '', description: '', price: '' }] 
+        setFormData({
+          category: '',
+          options: [{ name: '', description: '', price: '' }]
         });
         fetchCategories();
       }
     } catch (error) {
-      console.error('Error adding options:', error);
-      alert(error.response?.data?.message || 'Failed to add options. Please try again.');
+      console.error('Error details:', error.response?.data || error);
+      alert('Failed to add options: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -162,12 +161,13 @@ const CustomPackageAdmin = () => {
           <h3 className="text-2xl font-bold text-white mb-6">Existing Categories</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {categories.map((category, index) => (
-              <div key={index} className="bg-dark-300 p-4 rounded-lg">
+              <div key={category._id || index} className="bg-dark-300 p-4 rounded-lg">
                 <h4 className="text-xl font-semibold text-white mb-4">{category.name}</h4>
                 <ul className="space-y-2">
-                  {category.options.map((option, optIndex) => (
+                  {category.options?.map((option, optIndex) => (
                     <li key={optIndex} className="text-gray-300">
                       {option.name} - ${option.price}
+                      <p className="text-sm text-gray-400">{option.description}</p>
                     </li>
                   ))}
                 </ul>
