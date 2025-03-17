@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import PackageCard from '../components/Client/PackageCard';
 import VideoBackground from '../components/Shared/VideoBackground';
 import { Link } from 'react-router-dom';
+import api from '../services/api';  // Import api service
 
 const HomePage = () => {
   const [packages, setPackages] = useState([]);
@@ -12,7 +12,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/packages');
+        const response = await api.getPackages();  // Use api service instead of axios directly
         setPackages(response.data);
         setLoading(false);
       } catch (error) {
