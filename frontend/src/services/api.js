@@ -13,7 +13,16 @@ export const api = {
   // Custom Package APIs
   getCategories: () => axios.get(`${API_URL}/custom-packages/categories`),
   createCustomPackage: (data) => axios.post(`${API_URL}/custom-packages/options`, data),
-  deleteCategory: (id) => axios.delete(`${API_URL}/custom-packages/categories/${id}`)
+  deleteCategory: (id) => axios.delete(`${API_URL}/custom-packages/categories/${id}`),
+  
+  // Add these new endpoints
+  submitBooking: (data) => axios.post(`${API_URL}/custom-packages/bookings`, data, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }),
+  getBookings: () => axios.get(`${API_URL}/custom-packages/bookings`),
+  updateBookingStatus: (id, status) => axios.put(`${API_URL}/custom-packages/bookings/${id}`, { status })
 };
 
 export default api;
