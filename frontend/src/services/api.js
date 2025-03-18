@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_URL = 'http://localhost:5000/api';
 
 export const api = {
-  // Package APIs
+  // Package APIs 
   getPackages: () => axios.get(`${API_URL}/packages`),
   getPackage: (id) => axios.get(`${API_URL}/packages/${id}`),
   createPackage: (data) => axios.post(`${API_URL}/packages`, data),
