@@ -63,7 +63,7 @@ const CustomPackageAdmin = () => {
       console.error('Error details:', error.response?.data || error);
       alert('Failed to add options: ' + (error.response?.data?.message || error.message));
     }
-  };
+  };  
 
   const addOption = () => {
     setFormData({
