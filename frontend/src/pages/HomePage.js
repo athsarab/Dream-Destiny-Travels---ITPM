@@ -34,7 +34,7 @@ const HomePage = () => {
       <div className="relative z-10">
         <div className="container mx-auto px-4 py-32">
           <h1 className="text-6xl font-bold text-center text-white mb-6 animate-fade-in-down">
-            Discover Your Next Adventure
+            Discover Your Next Adventure !
           </h1>
           <p className="text-center text-gray-200 mb-12 animate-fade-in-up max-w-2xl mx-auto text-lg">
             Explore amazing destinations and create unforgettable memories with our carefully curated travel packages
