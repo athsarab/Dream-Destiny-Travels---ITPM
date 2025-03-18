@@ -9,7 +9,7 @@ const CustomPackageAdmin = () => {
   });
   const [categories, setCategories] = useState([]);
 
-  useEffect(() => {
+  useEffect(() => { 
     fetchCategories();
   }, []);
 
