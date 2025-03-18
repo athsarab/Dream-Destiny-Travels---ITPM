@@ -70,7 +70,7 @@ const AdminDashboard = () => {
           <div className="mb-8">
             <PackageForm onPackageAdded={handlePackageAdded} />
           </div>
-        )}
+        )}  
 
         <div className="bg-dark-200 rounded-lg shadow-md p-6 mb-8">
           <input
