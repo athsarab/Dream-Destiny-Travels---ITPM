@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import jsPDF from 'jspdf';
 
 const CustomBookingList = () => {
   const [bookings, setBookings] = useState([]);
@@ -24,18 +25,79 @@ const CustomBookingList = () => {
     try {
       await api.updateBookingStatus(bookingId, status);
       alert(`Booking ${status} successfully`);
-      fetchBookings(); // Refresh bookings list
+      fetchBookings();
     } catch (error) {
       console.error('Error updating booking:', error);
       alert('Failed to update booking status');
     }
   };
 
+  const generateReport = () => {
+    const doc = new jsPDF();
+    let yPos = 20;
+
+    // Add title
+    doc.setFontSize(16);
+    doc.text('Custom Package Bookings Report', 20, yPos);
+    doc.setFontSize(12);
+
+    bookings.forEach((booking, index) => {
+      yPos += 20;
+
+      // Add new page if needed
+      if (yPos > 280) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      // Booking details
+      doc.text(`Booking ${index + 1}:`, 20, yPos);
+      yPos += 10;
+      doc.text(`Customer: ${booking.customerName}`, 30, yPos);
+      yPos += 7;
+      doc.text(`Email: ${booking.email}`, 30, yPos);
+      yPos += 7;
+      doc.text(`Phone: ${booking.phoneNumber}`, 30, yPos);
+      yPos += 7;
+      doc.text(`Total Price: $${booking.totalPrice}`, 30, yPos);
+      yPos += 7;
+      doc.text(`Travel Date: ${new Date(booking.travelDate).toLocaleDateString()}`, 30, yPos);
+      yPos += 7;
+      doc.text(`Status: ${booking.status}`, 30, yPos);
+      yPos += 10;
+
+      // Selected options
+      doc.text('Selected Options:', 30, yPos);
+      yPos += 7;
+      Object.entries(booking.selectedOptions).forEach(([category, option]) => {
+        if (yPos > 280) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(`- ${category}: ${option.name} ($${option.price})`, 40, yPos);
+        yPos += 7;
+      });
+
+      yPos += 10; // Space between bookings
+    });
+
+    // Save the PDF
+    doc.save('bookings-report.pdf');
+  };
+
   if (loading) return <div className="text-white text-center">Loading bookings...</div>;
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white mb-6">Custom Package Bookings</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-white">Custom Package Bookings</h2>
+        <button
+          onClick={generateReport}
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
+        >
+          Generate Report
+        </button>
+      </div>
       {bookings.length === 0 ? (
         <p className="text-gray-400 text-center">No bookings found</p>
       ) : (
@@ -100,4 +162,4 @@ const CustomBookingList = () => {
   );
 };
 
-export default CustomBookingList; 
+export default CustomBookingList;
