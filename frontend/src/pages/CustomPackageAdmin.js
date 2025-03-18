@@ -10,7 +10,7 @@ const CustomPackageAdmin = () => {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => { 
-    fetchCategories();
+    fetchCategories();   
   }, []);
 
   const fetchCategories = async () => {
