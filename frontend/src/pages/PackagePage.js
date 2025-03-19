@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import PackageBookingForm from '../components/Client/PackageBookingForm';
 
 const PackagePage = () => {
@@ -14,10 +14,11 @@ const PackagePage = () => {
   useEffect(() => {
     const fetchPackage = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/packages/${id}`);
+        const response = await api.getPackage(id); // Changed from getPackageById to getPackage
         setPackage(response.data);
         setLoading(false);
       } catch (error) {
+        console.error('Error fetching package:', error);
         setError('Failed to fetch package details');
         setLoading(false);
       }
@@ -28,13 +29,11 @@ const PackagePage = () => {
 
   const handleBooking = async (bookingData) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/packages/bookings', bookingData);
-      alert('Booking submitted successfully!');
-      setShowBookingForm(false);
-      navigate('/');
+      setShowBookingForm(false); // Close form first
+      navigate('/', { state: { message: 'Booking submitted successfully!' } });
     } catch (error) {
       console.error('Error submitting booking:', error);
-      alert('Failed to submit booking. Please try again.');
+      alert('Failed to submit booking: ' + (error.response?.data?.message || 'Please try again'));
     }
   };
 
