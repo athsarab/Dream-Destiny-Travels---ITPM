@@ -38,7 +38,7 @@ const HomePage = () => {
           </h1>
           <p className="text-center text-gray-200 mb-12 animate-fade-in-up max-w-2xl mx-auto text-lg">
             Explore amazing destinations and create unforgettable memories with our carefully curated travel packages
-          </p>
+          </p> 
           
           <div className="flex justify-center space-x-4 mb-12">
             <input
