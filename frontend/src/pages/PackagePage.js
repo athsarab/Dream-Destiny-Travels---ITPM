@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import PackageBookingForm from '../components/Client/PackageBookingForm';
 
 const PackagePage = () => {
   const [package_, setPackage] = useState(null);
@@ -8,6 +9,7 @@ const PackagePage = () => {
   const [error, setError] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
+  const [showBookingForm, setShowBookingForm] = useState(false);
 
   useEffect(() => {
     const fetchPackage = async () => {
@@ -23,6 +25,18 @@ const PackagePage = () => {
 
     fetchPackage();
   }, [id]);
+
+  const handleBooking = async (bookingData) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/packages/bookings', bookingData);
+      alert('Booking submitted successfully!');
+      setShowBookingForm(false);
+      navigate('/');
+    } catch (error) {
+      console.error('Error submitting booking:', error);
+      alert('Failed to submit booking. Please try again.');
+    }
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -50,7 +64,7 @@ const PackagePage = () => {
           <div className="flex space-x-4">
             <button 
               className="flex-1 bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition-colors"
-              onClick={() => alert('Booking functionality coming soon!')}
+              onClick={() => setShowBookingForm(true)}
             >
               Book Now
             </button>
@@ -61,6 +75,13 @@ const PackagePage = () => {
               Back to Packages
             </button>
           </div>
+          {showBookingForm && (
+            <PackageBookingForm
+              packageDetails={package_}
+              onSubmit={handleBooking}
+              onCancel={() => setShowBookingForm(false)}
+            />
+          )}
         </div>
       </div>
     </div>
