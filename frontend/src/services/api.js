@@ -22,7 +22,12 @@ export const api = {
     }
   }),
   getBookings: () => axios.get(`${API_URL}/custom-packages/bookings`),
-  updateBookingStatus: (id, status) => axios.put(`${API_URL}/custom-packages/bookings/${id}`, { status })
+  updateBookingStatus: (id, status) => axios.put(`${API_URL}/custom-packages/bookings/${id}`, { status }),
+
+  // Add these new endpoints
+  submitPackageBooking: (data) => axios.post(`${API_URL}/packages/bookings`, data),
+  getPackageBookings: () => axios.get(`${API_URL}/packages/bookings`),
+  updatePackageBookingStatus: (id, status) => axios.put(`${API_URL}/packages/bookings/${id}`, { status })
 };
 
 export default api;
