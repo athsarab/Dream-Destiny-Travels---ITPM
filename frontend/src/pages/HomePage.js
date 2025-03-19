@@ -68,7 +68,7 @@ const HomePage = () => {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredPackages.slice(0, 3).map(pkg => (
-                    <div key={pkg._id} className="bg-dark-200/30 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div key={pkg._id} className="bg-white backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
                       {pkg.imageUrl && (
                         <div className="w-full h-48 overflow-hidden">
                           <img 
@@ -79,11 +79,11 @@ const HomePage = () => {
                         </div>
                       )}
                       <div className="p-6">
-                        <h3 className="text-xl font-semibold text-white mb-4">{pkg.name}</h3>
+                        <h3 className="text-xl font-semibold text-black mb-4">{pkg.name}</h3>
                         <div className="space-y-2 mb-6">
-                          <p className="text-gray-400">Location: {pkg.location}</p>
-                          <p className="text-primary-400 font-bold">Price: ${pkg.price}</p>
-                          <p className="text-gray-400">Duration: {pkg.duration}</p>
+                          <p className="text-gray-800">Location: {pkg.location}</p>
+                          <p className="text-primary-800 font-bold">Price: ${pkg.price}</p>
+                          <p className="text-gray-800">Duration: {pkg.duration}</p>
                         </div>
                         <button 
                           className="w-full bg-primary-400 text-white px-4 py-2 rounded-lg hover:bg-primary-500 transition-colors"
@@ -103,7 +103,7 @@ const HomePage = () => {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredPackages.map(pkg => (
-                    <div key={pkg._id} className="bg-dark-200/30 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div key={pkg._id} className="bg-white backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
                       {pkg.imageUrl && (
                         <div className="w-full h-48 overflow-hidden">
                           <img 
@@ -114,11 +114,11 @@ const HomePage = () => {
                         </div>
                       )}
                       <div className="p-6">
-                        <h3 className="text-xl font-semibold text-white mb-4">{pkg.name}</h3>
+                        <h3 className="text-xl font-semibold text-black mb-4">{pkg.name}</h3>
                         <div className="space-y-2 mb-6">
-                          <p className="text-gray-400">Location: {pkg.location}</p>
-                          <p className="text-primary-400 font-bold">Price: ${pkg.price}</p>
-                          <p className="text-gray-400">Duration: {pkg.duration}</p>
+                          <p className="text-gray-800">Location: {pkg.location}</p>
+                          <p className="text-primary-800 font-bold">Price: ${pkg.price}</p>
+                          <p className="text-gray-800">Duration: {pkg.duration}</p>
                         </div>
                         <button 
                           className="w-full bg-primary-400 text-white px-4 py-2 rounded-lg hover:bg-primary-500 transition-colors"
