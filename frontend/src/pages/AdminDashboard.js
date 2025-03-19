@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import PackageForm from '../components/Admin/PackageForm';
+import PackageBookingsList from '../components/Admin/PackageBookingsList';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -118,6 +119,12 @@ const AdminDashboard = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-12">
+          <div className="bg-dark-200 rounded-xl shadow-lg p-8">
+            <PackageBookingsList />
+          </div>
         </div>
       </div>
     </div>
