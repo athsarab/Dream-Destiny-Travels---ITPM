@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../../services/api';  // Update import to use api service
 
 const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -9,14 +10,30 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
     numberOfPeople: 1
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const bookingData = {
-      ...formData,
-      packageId: packageDetails._id,
-      totalPrice: packageDetails.price * formData.numberOfPeople
-    };
-    onSubmit(bookingData);
+    try {
+      const bookingData = {
+        ...formData,
+        packageId: packageDetails._id,
+        totalPrice: packageDetails.price * formData.numberOfPeople,
+        // Ensure date is properly formatted
+        travelDate: new Date(formData.travelDate).toISOString()
+      };
+
+      console.log('Submitting booking:', bookingData); // Debug log
+
+      const response = await api.submitPackageBooking(bookingData);
+      
+      if (response.data) {
+        alert('Booking submitted successfully!');
+        onSubmit(response.data); // Pass the booking data to parent
+        onCancel(); // Close the form
+      }
+    } catch (error) {
+      console.error('Error details:', error);
+      alert('Failed to submit booking: ' + (error.response?.data?.message || 'Please try again'));
+    }
   };
 
   return (
