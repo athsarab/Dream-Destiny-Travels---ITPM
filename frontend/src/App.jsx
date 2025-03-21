@@ -6,7 +6,7 @@ import Footer from './components/Shared/Footer.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import CustomPackageAdmin from './pages/CustomPackageAdmin.jsx';
 import EditPackagePage from './pages/EditPackagePage.jsx';
-import EmployeeManagement from './pages/EmployeeManagement.jsx';
+
 
 // Client Pages
 import HomePage from './pages/HomePage.jsx';
@@ -37,7 +37,7 @@ function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/custom-packages" element={<CustomPackageAdmin />} />
             <Route path="/admin/edit/:id" element={<EditPackagePage />} />
-            <Route path="/admin/resources" element={<EmployeeManagement />} />
+            
 
             {/* Employee Manager Routes */}
             <Route path="/employee-manager" element={<EmployeeManagerDashboard />} />

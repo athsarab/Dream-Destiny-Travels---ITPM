@@ -40,9 +40,6 @@ const Navbar = () => {
                   <Link to="/admin/custom-packages" className="text-white/90 hover:text-primary-400 font-medium transition-colors duration-300">
                     Custom Packages
                   </Link>
-                  <Link to="/admin/resources" className="text-white/90 hover:text-primary-400 font-medium transition-colors duration-300">
-                    Resource Management
-                  </Link>
                   <Link to="/" className="px-4 py-2 bg-primary-600/80 hover:bg-primary-600 text-white rounded-full transition-all duration-300 backdrop-blur-sm">
                     Logout
                   </Link>
