@@ -8,7 +8,7 @@ const HomePage = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-
+ 
   useEffect(() => {
     const fetchPackages = async () => {
       try {
