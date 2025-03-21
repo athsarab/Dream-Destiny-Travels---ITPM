@@ -9,8 +9,8 @@ const CustomPackageAdmin = () => {
   });
   const [categories, setCategories] = useState([]);
 
-  useEffect(() => {
-    fetchCategories();
+  useEffect(() => { 
+    fetchCategories();   
   }, []);
 
   const fetchCategories = async () => {
@@ -23,7 +23,7 @@ const CustomPackageAdmin = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {   
     e.preventDefault();
     try {
       // Validate and clean data
@@ -73,12 +73,22 @@ const CustomPackageAdmin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-dark-100 py-12 px-4 pt-24">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-12">Custom Package Management</h1>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 p-6 pt-24">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 
+                      bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-xl 
+                      border border-white/20">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text 
+                       bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500
+                       drop-shadow-lg">
+            Custom Package Management
+          </h1>
+        </div>
         
         {/* Options Management Section */}
-        <div className="bg-dark-200 rounded-xl shadow-lg p-8 mb-12">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-8 
+                     border border-white/20 hover:shadow-purple-500/20 
+                     transition-all duration-300">
           <h2 className="text-2xl font-bold text-white mb-8">Package Options</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -87,14 +97,19 @@ const CustomPackageAdmin = () => {
                 type="text"
                 value={formData.category}
                 onChange={(e) => setFormData({...formData, category: e.target.value})}
-                className="w-full p-3 bg-dark-300 text-white rounded-lg"
+                className="w-full px-6 py-4 rounded-xl border border-white/20 
+                       bg-white/5 text-white placeholder-gray-300
+                       focus:ring-2 focus:ring-purple-500 focus:border-transparent
+                       transition-all duration-300 outline-none backdrop-blur-sm
+                       shadow-lg"
                 placeholder="e.g., Transportation, Accommodation"
                 required
               />
             </div>
 
             {formData.options.map((option, index) => (
-              <div key={index} className="space-y-4 p-4 bg-dark-300 rounded-lg">
+              <div key={index} className="space-y-4 p-6 bg-white/5 backdrop-blur-md 
+                                      rounded-xl border border-white/20">
                 <div>
                   <label className="block text-white mb-2">Option Name</label>
                   <input
@@ -105,7 +120,11 @@ const CustomPackageAdmin = () => {
                       newOptions[index].name = e.target.value;
                       setFormData({...formData, options: newOptions});
                     }}
-                    className="w-full p-3 bg-dark-400 text-white rounded-lg"
+                    className="w-full px-6 py-4 rounded-xl border border-white/20 
+                           bg-white/5 text-white placeholder-gray-300
+                           focus:ring-2 focus:ring-purple-500 focus:border-transparent
+                           transition-all duration-300 outline-none backdrop-blur-sm
+                           shadow-lg"
                     placeholder="e.g., Economy Car, Luxury Hotel"
                     required
                   />
@@ -120,7 +139,11 @@ const CustomPackageAdmin = () => {
                       newOptions[index].description = e.target.value;
                       setFormData({...formData, options: newOptions});
                     }}
-                    className="w-full p-3 bg-dark-400 text-white rounded-lg"
+                    className="w-full px-6 py-4 rounded-xl border border-white/20 
+                           bg-white/5 text-white placeholder-gray-300
+                           focus:ring-2 focus:ring-purple-500 focus:border-transparent
+                           transition-all duration-300 outline-none backdrop-blur-sm
+                           shadow-lg"
                     placeholder="Description of the option"
                     required
                   />
@@ -136,7 +159,11 @@ const CustomPackageAdmin = () => {
                       newOptions[index].price = e.target.value;
                       setFormData({...formData, options: newOptions});
                     }}
-                    className="w-full p-3 bg-dark-400 text-white rounded-lg"
+                    className="w-full px-6 py-4 rounded-xl border border-white/20 
+                           bg-white/5 text-white placeholder-gray-300
+                           focus:ring-2 focus:ring-purple-500 focus:border-transparent
+                           transition-all duration-300 outline-none backdrop-blur-sm
+                           shadow-lg"
                     placeholder="Price in USD"
                     required
                   />
@@ -148,13 +175,21 @@ const CustomPackageAdmin = () => {
               <button
                 type="button"
                 onClick={addOption}
-                className="px-6 py-3 bg-dark-400 text-white rounded-lg hover:bg-dark-500"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white 
+                       px-6 py-3 rounded-xl shadow-lg hover:shadow-blue-500/50
+                       transition-all duration-300 transform hover:scale-105
+                       hover:from-blue-500 hover:to-indigo-500
+                       active:scale-95"
               >
                 Add Another Option
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                className="bg-gradient-to-r from-pink-600 to-purple-600 text-white 
+                       px-6 py-3 rounded-xl shadow-lg hover:shadow-pink-500/50
+                       transition-all duration-300 transform hover:scale-105
+                       hover:from-pink-500 hover:to-purple-500
+                       active:scale-95"
               >
                 Save Options
               </button>
@@ -163,7 +198,9 @@ const CustomPackageAdmin = () => {
         </div>
 
         {/* Bookings Management Section */}
-        <div className="bg-dark-200 rounded-xl shadow-lg p-8">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-8 
+                     border border-white/20 hover:shadow-purple-500/20 
+                     transition-all duration-300">
           <CustomBookingList />
         </div>
       </div>
