@@ -11,7 +11,7 @@ const AdminDashboard = () => {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
 
-  useEffect(() => {
+  useEffect(() => { 
     fetchPackages();
   }, []);
 
