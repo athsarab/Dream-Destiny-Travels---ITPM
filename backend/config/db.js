@@ -17,7 +17,7 @@ const connectDB = async () => {
         
         console.log(`MongoDB Connected: ${conn.connection.host}`);
         
-        // Set up connection error handler
+        // Set up connection error handler  
         conn.connection.on('error', (err) => {
             console.error('MongoDB connection error:', err);
         });
