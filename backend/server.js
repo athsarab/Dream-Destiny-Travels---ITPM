@@ -13,6 +13,19 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir);
 }
 
+// Configure CORS
+app.use(cors({
+  origin: 'http://localhost:5173', // Add your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type']
+}));
+
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`, req.body);
+  next();
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -26,13 +39,26 @@ connectDB();
 
 // Routes
 app.use('/api/packages', require('./routes/packageRoutes'));
-app.use('/api/custom-packages', require('./routes/customPackageRoutes')); // Make sure this matches frontend URL
+app.use('/api/custom-packages', require('./routes/customPackageRoutes'));
+app.use('/api/employees', require('./routes/employeeRoutes')); // Add this line
+app.use('/api/hotels', require('./routes/hotelRoutes')); // Add this line
 
-// Error handling middleware
+// Error handling middleware - update to be more detailed
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error('Error details:', err);
+  res.status(err.status || 500).json({
+    message: err.message || 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err : {}
+  });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, async () => {
+  try {
+    await connectDB(); // Ensure database connects before starting server
+    console.log(`Server running on port ${PORT}`);
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+});
