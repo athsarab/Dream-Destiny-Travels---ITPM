@@ -15,9 +15,9 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Configure CORS
 app.use(cors({
-  origin: 'http://localhost:5173', // Add your frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type']
+  origin: 'http://localhost:5173', // Replace with your frontend URL
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  allowedHeaders: 'Content-Type,Authorization'
 }));
 
 // Add request logging middleware
@@ -38,6 +38,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 connectDB();
 
 // Routes
+app.use('/api/auth', require('./routes/authRoutes'));
+
 app.use('/api/packages', require('./routes/packageRoutes'));
 app.use('/api/custom-packages', require('./routes/customPackageRoutes'));
 app.use('/api/employees', require('./routes/employeeRoutes')); // Add this line
