@@ -1,9 +1,20 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FaUserCircle } from 'react-icons/fa';
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+
+  const handleProfileClick = () => {
+    if (userInfo) {
+      navigate('/profile1');
+    } else {
+      navigate('/Login1');
+    }
+  };
 
   return (
     <nav className="fixed w-full z-50 top-4">
@@ -25,12 +36,19 @@ const Navbar = () => {
                   <Link to="/packages" className="text-white/90 hover:text-primary-400 font-medium transition-colors duration-300">
                     Packages
                   </Link>
-                  <Link to="/admin" className="px-4 py-2 bg-primary-600/80 hover:bg-primary-600 text-white rounded-full transition-all duration-300 backdrop-blur-sm">
-                    Admin Login
+
+                  <Link to="/Blog" className="text-white/90 hover:text-primary-400 font-medium transition-colors duration-300">
+                    Blogs
                   </Link>
-                  <Link to="/employee-manager" className="px-4 py-2 bg-rose-600/80 hover:bg-rose-600 text-white rounded-full transition-all duration-300 backdrop-blur-sm">
-                    Employee Manager
-                  </Link>
+                  {userInfo && (
+                    <div className="flex items-center space-x-4">
+                      <FaUserCircle
+                        size={30}
+                        className="text-white cursor-pointer hover:text-primary-400 transition-colors duration-300"
+                        onClick={handleProfileClick}
+                      />
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
