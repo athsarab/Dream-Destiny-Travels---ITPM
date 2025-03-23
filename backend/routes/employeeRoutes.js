@@ -56,27 +56,25 @@ router.get('/:id', async (req, res) => {
 // Add new employee
 router.post('/', async (req, res) => {
     try {
-        // Log the received data for debugging
-        console.log('Received employee data:', req.body);
-        
-        const employee = new Employee({
-            name: req.body.name,
-            employeeId: req.body.employeeId,
-            email: req.body.email,
-            phoneNumber: req.body.phoneNumber,
-            role: req.body.role,  // Changed from position to role
-            salary: req.body.salary,
-            nic: req.body.nic
-        });
-        
-        const newEmployee = await employee.save();
-        console.log('Saved employee:', newEmployee); // Debug log
-        res.status(201).json(newEmployee);
+        const { phoneNumber } = req.body;
+
+        // Phone number validation
+        const phoneRegex = /^\d{10}$/;
+        if (!phoneRegex.test(phoneNumber)) {
+            return res.status(400).json({ 
+                message: 'Phone number must be exactly 10 digits' 
+            });
+        }
+
+        // Create new employee
+        const employee = new Employee(req.body);
+        const savedEmployee = await employee.save();
+        res.status(201).json(savedEmployee);
     } catch (error) {
-        console.error('Error saving employee:', error); // Debug log
+        console.error('Error saving employee:', error);
         res.status(400).json({ 
             message: error.message,
-            details: error.errors // Include validation errors if any
+            details: error.errors
         });
     }
 });

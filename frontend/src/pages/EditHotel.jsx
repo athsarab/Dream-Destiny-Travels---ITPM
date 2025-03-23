@@ -18,6 +18,21 @@ const EditHotel = () => {
     status: 'available'
   });
 
+  // Add validation state
+  const [validationErrors, setValidationErrors] = useState({
+    contactNumber: ''
+  });
+
+  // Add validation function
+  const validateField = (name, value) => {
+    if (name === 'contactNumber') {
+      const phoneRegex = /^\d{10}$/;
+      return !phoneRegex.test(value) ? 
+        'Contact number must be exactly 10 digits' : '';
+    }
+    return '';
+  };
+
   useEffect(() => {
     if (!id) {
       setError('No hotel ID provided');
@@ -61,6 +76,16 @@ const EditHotel = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Phone validation
+      const phoneRegex = /^\d{10}$/;
+      if (!phoneRegex.test(formData.contactNumber)) {
+        setValidationErrors(prev => ({
+          ...prev,
+          contactNumber: 'Contact number must be exactly 10 digits'
+        }));
+        return;
+      }
+
       // Input validation
       if (!formData.name || !formData.location || !formData.roomType || !formData.contactNumber) {
         alert('Please fill in all required fields');
@@ -182,11 +207,24 @@ const EditHotel = () => {
               <label className="block text-gray-400 mb-2">Contact Number</label>
               <input
                 type="tel"
+                name="contactNumber"
                 required
+                placeholder="Enter 10 digit contact number"
                 value={formData.contactNumber}
-                onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
+                onChange={(e) => {
+                  setFormData({...formData, contactNumber: e.target.value});
+                  setValidationErrors(prev => ({
+                    ...prev,
+                    contactNumber: validateField('contactNumber', e.target.value)
+                  }));
+                }}
+                className={`w-full p-3 rounded-lg bg-gray-700/50 text-white border ${
+                  validationErrors.contactNumber ? 'border-red-500' : 'border-gray-600'
+                } focus:border-pink-500 focus:ring-2 focus:ring-pink-500`}
               />
+              {validationErrors.contactNumber && (
+                <p className="mt-1 text-sm text-red-500">{validationErrors.contactNumber}</p>
+              )}
             </div>
 
             <div className="md:col-span-2 flex gap-4">

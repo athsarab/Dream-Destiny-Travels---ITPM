@@ -41,6 +41,16 @@ router.get('/:id', async (req, res) => {
 // Add new hotel
 router.post('/', async (req, res) => {
     try {
+        const { contactNumber } = req.body;
+
+        // Strict phone number validation
+        const phoneRegex = /^\d{10}$/;
+        if (!contactNumber || !phoneRegex.test(contactNumber)) {
+            return res.status(400).json({ 
+                message: 'Contact number must be exactly 10 digits' 
+            });
+        }
+
         console.log('Received hotel data:', req.body);
 
         // Data validation
@@ -74,6 +84,15 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         console.log('Update request for hotel ID:', id);
         console.log('Update data received:', req.body);
+
+        // Add phone validation
+        const { contactNumber } = req.body;
+        const phoneRegex = /^\d{10}$/;
+        if (!contactNumber || !phoneRegex.test(contactNumber)) {
+            return res.status(400).json({ 
+                message: 'Contact number must be exactly 10 digits' 
+            });
+        }
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ message: 'Invalid hotel ID format' });

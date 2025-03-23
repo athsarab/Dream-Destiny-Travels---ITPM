@@ -16,6 +16,11 @@ const AddEmployeeForm = () => {
     email: '',
     salary: '',
   });
+  const [validationErrors, setValidationErrors] = useState({
+    email: '',
+    nic: '',
+    phoneNumber: ''
+  });
 
   const roles = ['Travel Agent', 'Driver', 'Worker', 'Supplier'];
 
@@ -97,9 +102,75 @@ const AddEmployeeForm = () => {
     );
   }
 
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'nic':
+        // Fixed NIC validation: 12 digits OR 9 digits followed by V/v
+        const nicRegex = /^(\d{12}|\d{9}[vV])$/;
+        return !nicRegex.test(value) ? 
+          'NIC must be either 12 digits or 9 digits followed by V/v' : '';
+      case 'email':
+        return !value.includes('@') ? 
+          'Please enter a valid email address' : '';
+      case 'phoneNumber':
+        const phoneRegex = /^\d{10}$/;
+        return !phoneRegex.test(value) ? 
+          'Phone number must be exactly 10 digits' : '';
+      default:
+        return '';
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({...prev, [name]: value}));
+    setValidationErrors(prev => ({
+      ...prev,
+      [name]: validateField(name, value)
+    }));
+  };
+
+  const validateForm = () => {
+    // Add phone validation
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(formData.phoneNumber)) {
+      setValidationErrors(prev => ({
+        ...prev,
+        phoneNumber: 'Phone number must be exactly 10 digits'
+      }));
+      return false;
+    }
+
+    if (!formData.email.includes('@')) {
+      alert('Please enter a valid email address');
+      return false;
+    }
+
+    // Basic required field validation
+    if (!formData.name || !formData.employeeId || !formData.role || !formData.salary) {
+      alert('Please fill in all required fields');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Fixed NIC validation regex here too
+      const nicRegex = /^(\d{12}|\d{9}[vV])$/;
+      if (!nicRegex.test(formData.nic)) {
+        setValidationErrors(prev => ({
+          ...prev,
+          nic: 'NIC must be either 12 digits or 9 digits followed by V/v'
+        }));
+        return;
+      }
+
+      if (!validateForm()) {
+        return;
+      }
       console.log('Submitting employee data:', formData);
       
       let response;
@@ -158,31 +229,51 @@ const AddEmployeeForm = () => {
               <label className="block text-gray-400 mb-2">NIC</label>
               <input
                 type="text"
+                name="nic"
                 required
+                placeholder="Enter 9 digits with V/v or 12 digits"
                 value={formData.nic}
-                onChange={(e) => setFormData({...formData, nic: e.target.value})}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500"
+                onChange={handleChange}
+                className={`w-full p-3 rounded-lg bg-gray-700/50 text-white border ${
+                  validationErrors.nic ? 'border-red-500' : 'border-gray-600'
+                } focus:border-pink-500 focus:ring-2 focus:ring-pink-500`}
               />
+              {validationErrors.nic && (
+                <p className="mt-1 text-sm text-red-500">{validationErrors.nic}</p>
+              )}
             </div>
             <div>
               <label className="block text-gray-400 mb-2">Phone Number</label>
               <input
                 type="tel"
+                name="phoneNumber"
                 required
+                placeholder="Enter 10 digit phone number"
                 value={formData.phoneNumber}
-                onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500"
+                onChange={handleChange}
+                className={`w-full p-3 rounded-lg bg-gray-700/50 text-white border ${
+                  validationErrors.phoneNumber ? 'border-red-500' : 'border-gray-600'
+                } focus:border-pink-500 focus:ring-2 focus:ring-pink-500`}
               />
+              {validationErrors.phoneNumber && (
+                <p className="mt-1 text-sm text-red-500">{validationErrors.phoneNumber}</p>
+              )}
             </div>
             <div>
               <label className="block text-gray-400 mb-2">Email</label>
               <input
                 type="email"
+                name="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500"
+                onChange={handleChange}
+                className={`w-full p-3 rounded-lg bg-gray-700/50 text-white border ${
+                  validationErrors.email ? 'border-red-500' : 'border-gray-600'
+                } focus:border-pink-500 focus:ring-2 focus:ring-pink-500`}
               />
+              {validationErrors.email && (
+                <p className="mt-1 text-sm text-red-500">{validationErrors.email}</p>
+              )}
             </div>
             <div>
               <label className="block text-gray-400 mb-2">Role</label>

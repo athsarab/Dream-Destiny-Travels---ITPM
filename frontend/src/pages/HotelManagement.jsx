@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const HotelManagement = () => {
-  const [hotels, setHotels] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -15,45 +14,42 @@ const HotelManagement = () => {
     contactNumber: '',
     status: 'available'
   });
+  const [validationErrors, setValidationErrors] = useState({
+    contactNumber: ''
+  });
 
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchHotels();
-  }, []);
-
-  const fetchHotels = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/api/hotels', {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      setHotels(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching hotels:', error);
-      setLoading(false);
+  const validateField = (name, value) => {
+    if (name === 'contactNumber') {
+      const phoneRegex = /^\d{10}$/;
+      return !phoneRegex.test(value) ? 
+        'Contact number must be exactly 10 digits' : '';
     }
+    return '';
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this hotel?')) {
-      try {
-        await axios.delete(`http://localhost:5000/api/hotels/${id}`);
-        setHotels(hotels.filter(hotel => hotel._id !== id));
-        alert('Hotel deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting hotel:', error);
-        alert('Failed to delete hotel');
-      }
-    }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({...prev, [name]: value}));
+    setValidationErrors(prev => ({
+      ...prev,
+      [name]: validateField(name, value)
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Validate data before sending
+      // Phone number validation
+      const phoneRegex = /^\d{10}$/;
+      if (!phoneRegex.test(formData.contactNumber)) {
+        setValidationErrors(prev => ({
+          ...prev,
+          contactNumber: 'Contact number must be exactly 10 digits'
+        }));
+        return;
+      }
+
+      // Data validation
       const hotelData = {
         ...formData,
         availableRooms: parseInt(formData.availableRooms) || 0,
@@ -95,7 +91,7 @@ const HotelManagement = () => {
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-gray-700">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-purple-600 bg-clip-text text-transparent">
-              Hotel Management
+              Add New Hotel
             </h1>
           </div>
 
@@ -162,14 +158,23 @@ const HotelManagement = () => {
             </div>
 
             <div>
-              <label className="block text-gray-400 mb-2">Contact Number</label>
+              <label className="block text-gray-400 mb-2">Hotel Contact No</label>
               <input
-                type="tel"
+                type="text"
+                name="contactNumber"
                 required
+                pattern="\d{10}"
+                placeholder="Enter 10 digit contact number"
                 value={formData.contactNumber}
-                onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
+                onChange={handleChange}
+                maxLength="10"
+                className={`w-full p-3 rounded-lg bg-gray-700/50 text-white border ${
+                  validationErrors.contactNumber ? 'border-red-500' : 'border-gray-600'
+                } focus:border-pink-500 focus:ring-2 focus:ring-pink-500`}
               />
+              {validationErrors.contactNumber && (
+                <p className="mt-1 text-sm text-red-500">{validationErrors.contactNumber}</p>
+              )}
             </div>
 
             <div className="md:col-span-2">
@@ -181,41 +186,6 @@ const HotelManagement = () => {
               </button>
             </div>
           </form>
-
-          {/* Hotels List */}
-          <div className="grid gap-6">
-            {loading ? (
-              <p className="text-white text-center">Loading hotels...</p>
-            ) : (
-              hotels.map(hotel => (
-                <div key={hotel._id} className="bg-gray-700/30 rounded-lg p-6 border border-gray-600">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-xl font-semibold text-white mb-2">{hotel.name}</h3>
-                      <p className="text-gray-300">Location: {hotel.location}</p>
-                      <p className="text-gray-300">Available Rooms: {hotel.availableRooms}</p>
-                      <p className="text-gray-300">Price per Night: ${hotel.pricePerNight}</p>
-                      <p className="text-gray-300">Room Type: {hotel.roomType}</p>
-                    </div>
-                    <div className="flex gap-4">
-                      <button
-                        onClick={() => navigate(`/employee-manager/edit-hotel/${hotel._id}`)}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(hotel._id)}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
         </div>
       </div>
     </div>

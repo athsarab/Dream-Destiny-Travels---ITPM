@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import jsPDF from 'jspdf';
 
 const HotelList = () => {
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,27 +36,97 @@ const HotelList = () => {
     }
   };
 
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    let yPos = 20;
+
+    // Add title
+    doc.setFontSize(18);
+    doc.text('Hotel Details Report', 20, yPos);
+    doc.setFontSize(12);
+    yPos += 20;
+
+    // Add date
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, yPos);
+    yPos += 20;
+
+    // Add hotel details
+    hotels.forEach((hotel, index) => {
+      // Add new page if needed
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text(`Hotel ${index + 1}:`, 20, yPos);
+      yPos += 10;
+
+      doc.setFontSize(12);
+      doc.text(`Name: ${hotel.name}`, 30, yPos); yPos += 8;
+      doc.text(`Location: ${hotel.location}`, 30, yPos); yPos += 8;
+      doc.text(`Room Type: ${hotel.roomType}`, 30, yPos); yPos += 8;
+      doc.text(`Available Rooms: ${hotel.availableRooms}`, 30, yPos); yPos += 8;
+      doc.text(`Price per Night: $${hotel.pricePerNight}`, 30, yPos); yPos += 8;
+      doc.text(`Contact Number: ${hotel.contactNumber}`, 30, yPos); yPos += 8;
+      doc.text(`Status: ${hotel.status}`, 30, yPos); yPos += 15;
+    });
+
+    // Save PDF
+    doc.save('hotel-details.pdf');
+  };
+
+  // Add filtered hotels logic
+  const filteredHotels = hotels.filter(hotel => 
+    hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    hotel.location.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black p-6 pt-24">
       <div className="max-w-7xl mx-auto">
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-gray-700">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-purple-600 bg-clip-text text-transparent">
-              Hotels List
-            </h1>
-            <button
-              onClick={() => navigate('/employee-manager/hotels')}
-              className="bg-violet-500 text-white px-6 py-2 rounded-lg hover:bg-violet-600"
-            >
-              Add New Hotel
-            </button>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-purple-600 bg-clip-text text-transparent mb-2">
+                Hotels List
+              </h1>
+              <p className="text-gray-400">View and manage all registered hotels</p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={generatePDF}
+                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
+              >
+                Download PDF
+              </button>
+              <button
+                onClick={() => navigate('/employee-manager/hotels')}
+                className="bg-gradient-to-r from-violet-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-violet-600 hover:to-purple-700"
+              >
+                Add New Hotel
+              </button>
+            </div>
+          </div>
+
+          {/* Add Search Bar */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Search by hotel name or location..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500"
+            />
           </div>
 
           <div className="grid gap-6">
             {loading ? (
               <p className="text-white text-center">Loading hotels...</p>
+            ) : filteredHotels.length === 0 ? (
+              <p className="text-white text-center">No hotels found</p>
             ) : (
-              hotels.map(hotel => (
+              filteredHotels.map(hotel => (
                 <div key={hotel._id} className="bg-gray-700/30 rounded-lg p-6 border border-gray-600">
                   <div className="flex justify-between items-start">
                     <div>
