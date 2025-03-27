@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import jsPDF from 'jspdf';
 
 const PackageBookingsList = () => {
@@ -13,7 +13,9 @@ const PackageBookingsList = () => {
 
     const fetchBookings = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/packages/bookings');
+            setLoading(true);
+            const response = await api.getPackageBookings();
+            
             // Make sure we have valid data
             if (response && response.data) {
                 setBookings(response.data || []);
@@ -21,21 +23,51 @@ const PackageBookingsList = () => {
                 setError("No booking data received");
                 setBookings([]);
             }
-            setLoading(false);
+            setError(null);
         } catch (error) {
             console.error('Error fetching bookings:', error);
             setError("Failed to load bookings");
+            setBookings([]);
+        } finally {
             setLoading(false);
         }
     };
 
     const handleStatusUpdate = async (bookingId, status) => {
         try {
-            await axios.put(`http://localhost:5000/api/packages/bookings/${bookingId}`, { status });
+            await api.updatePackageBookingStatus(bookingId, status);
             alert(`Booking ${status} successfully`);
             fetchBookings();
         } catch (error) {
+            console.error('Error updating booking status:', error);
             alert('Failed to update booking status');
+        }
+    };
+
+    const handleDeleteBooking = async (bookingId) => {
+        if (!window.confirm('Are you sure you want to delete this booking?')) {
+            return;
+        }
+
+        try {
+            setLoading(true); // Show loading state
+            setLoading(true); // Add loading state while deleting
+            
+            const response = await api.deletePackageBooking(bookingId);
+            
+            if (response && response.data && response.data.success) {
+                // Only update the UI if the delete was successful
+                setBookings(prevBookings => prevBookings.filter(booking => booking._id !== bookingId));
+                alert('Booking deleted successfully');
+            } else {
+                throw new Error('Unexpected response from server');
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            // Show a more user-friendly error message
+            alert(`Failed to delete booking: ${error.message}`);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -114,13 +146,14 @@ const PackageBookingsList = () => {
                             <div className="flex justify-between">
                                 <div>
                                     <h3 className="text-xl font-semibold text-white">
-                                        {/* Add null check here */}
                                         {booking.packageId && booking.packageId.name 
                                             ? booking.packageId.name 
                                             : 'Unknown Package'}
                                     </h3>
                                     <p className="text-gray-400">Customer: {booking.customerName || 'N/A'}</p>
                                     <p className="text-gray-400">Email: {booking.email || 'N/A'}</p>
+                                    <p className="text-gray-400">Phone: {booking.phoneNumber || 'N/A'}</p>
+                                    <p className="text-gray-400">Travel Date: {new Date(booking.travelDate).toLocaleDateString()}</p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-primary-400 font-bold">
@@ -149,6 +182,12 @@ const PackageBookingsList = () => {
                                         </button>
                                     </>
                                 )}
+                                <button
+                                    onClick={() => handleDeleteBooking(booking._id)}
+                                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                                >
+                                    Delete
+                                </button>
                                 <span className={`px-4 py-2 rounded-lg ${
                                     booking.status === 'approved' ? 'bg-success/20 text-success' :
                                     booking.status === 'rejected' ? 'bg-error/20 text-error' :

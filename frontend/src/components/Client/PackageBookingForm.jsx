@@ -9,9 +9,14 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
     travelDate: '',
     numberOfPeople: 1
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+    
     try {
       const bookingData = {
         ...formData,
@@ -26,13 +31,14 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
       const response = await api.submitPackageBooking(bookingData);
       
       if (response.data) {
-        alert('Booking submitted successfully!');
+        alert('Booking request submitted successfully! The admin will review your request.');
         onSubmit(response.data); // Pass the booking data to parent
-        onCancel(); // Close the form
       }
     } catch (error) {
       console.error('Error details:', error);
-      alert('Failed to submit booking: ' + (error.response?.data?.message || 'Please try again'));
+      setError(error.response?.data?.message || 'Failed to submit booking. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -40,6 +46,12 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-dark-200 rounded-xl p-6 w-full max-w-md">
         <h2 className="text-2xl font-bold text-white mb-6">Book Package: {packageDetails.name}</h2>
+        
+        {error && (
+          <div className="bg-red-500/10 border border-red-500 text-red-400 p-4 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -111,14 +123,16 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
               type="button"
               onClick={onCancel}
               className="flex-1 bg-dark-300 text-white py-3 rounded-lg hover:bg-dark-400"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
+              disabled={isSubmitting}
               className="flex-1 bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700"
             >
-              Confirm Booking
+              {isSubmitting ? 'Submitting...' : 'Confirm Booking'}
             </button>
           </div>
         </form>
