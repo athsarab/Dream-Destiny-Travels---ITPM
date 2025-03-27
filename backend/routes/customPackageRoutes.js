@@ -170,7 +170,7 @@ router.put('/bookings/:id', async (req, res) => {
         res.json(booking);
     } catch (error) {
         res.status(400).json({ message: error.message });
-    }
+    } 
 });
 
 // Delete booking
