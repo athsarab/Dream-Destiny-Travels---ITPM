@@ -29,13 +29,26 @@ router.post('/bookings', async (req, res) => {
     }
 });
 
+// Make sure the populate is working correctly for packageId
 router.get('/bookings', async (req, res) => {
     try {
+        // Use lean() to get plain objects instead of Mongoose documents
         const bookings = await PackageBooking.find()
             .populate('packageId')
-            .sort('-createdAt');
-        res.json(bookings);
+            .sort('-createdAt')
+            .lean();
+            
+        // Add safeguard for null packageId
+        const safeBookings = bookings.map(booking => {
+            if (!booking.packageId) {
+                booking.packageId = { name: 'Unknown Package' };
+            }
+            return booking;
+        });
+        
+        res.json(safeBookings);
     } catch (error) {
+        console.error("Error fetching bookings:", error);
         res.status(500).json({ message: error.message });
     }
 });

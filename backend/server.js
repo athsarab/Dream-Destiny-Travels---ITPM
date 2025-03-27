@@ -13,54 +13,56 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir);
 }
 
-// Configure CORS
+// Configure CORS properly
 app.use(cors({
-  origin: 'http://localhost:5173', // Replace with your frontend URL
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  allowedHeaders: 'Content-Type,Authorization'
+
 }));
 
 // Add request logging middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`, req.body);
+  console.log(`${req.method} ${req.url}`);
   next();
 });
 
 // Middleware
-app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Add this line
+app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from uploads directory with correct path
+// Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Connect to MongoDB
-connectDB();
+// Simple health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'Server is running' });
+});
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 
 app.use('/api/packages', require('./routes/packageRoutes'));
 app.use('/api/custom-packages', require('./routes/customPackageRoutes'));
-app.use('/api/employees', require('./routes/employeeRoutes')); // Add this line
-app.use('/api/hotels', require('./routes/hotelRoutes')); // Add this line
+app.use('/api/employees', require('./routes/employeeRoutes'));
+app.use('/api/hotels', require('./routes/hotelRoutes'));
 
-// Error handling middleware - update to be more detailed
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error details:', err);
-  res.status(err.status || 500).json({
-    message: err.message || 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err : {}
+  console.error('Server error:', err);
+  res.status(500).json({ 
+    message: 'Internal Server Error', 
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined 
   });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, async () => {
-  try {
-    await connectDB(); // Ensure database connects before starting server
-    console.log(`Server running on port ${PORT}`);
-  } catch (error) {
-    console.error('Failed to start server:', error);
+
+// Connect to MongoDB first, then start server (avoid connecting twice)
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('Failed to connect to database:', err);
     process.exit(1);
-  }
-});
+  });

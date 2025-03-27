@@ -7,29 +7,64 @@ import api from '../services/api';  // Import api service
 const HomePage = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
  
   useEffect(() => {
     const fetchPackages = async () => {
       try {
         const response = await api.getPackages();  // Use api service instead of axios directly
-        setPackages(response.data);
+        
+        // Make sure we have valid data before setting state
+        if (response && response.data) {
+          setPackages(response.data || []);
+        } else {
+          console.warn('No package data received from API');
+          setPackages([]);
+        }
         setLoading(false);
       } catch (error) {
         console.error('Error fetching packages:', error);
+        setError('Failed to load packages. Please try again later.');
         setLoading(false);
       }
     };
     fetchPackages();
   }, []);
 
-  const filteredPackages = packages.filter(pkg =>
-    pkg.name.toLowerCase().includes(search.toLowerCase()) ||
-    pkg.location.toLowerCase().includes(search.toLowerCase())
-  );
+  // Add more robust filtering with null checks
+  const filteredPackages = packages && packages.filter ? 
+    packages.filter(pkg => 
+      pkg && 
+      pkg.name && 
+      pkg.location &&
+      (pkg.name.toLowerCase().includes(search.toLowerCase()) || 
+       pkg.location.toLowerCase().includes(search.toLowerCase()))
+    ) : [];
+
+  // Show empty state when no packages or error
+  if (error) {
+    return (
+      <div className="min-h-screen relative overflow-hidden">
+        <VideoBackground />
+        <div className="relative z-10 flex items-center justify-center h-screen">
+          <div className="bg-black/50 p-8 rounded-xl backdrop-blur-md text-center">
+            <h2 className="text-2xl font-bold text-white mb-4">Oops! Something went wrong</h2>
+            <p className="text-gray-300 mb-6">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative overflow-hidden">
       <VideoBackground />
       <div className="relative z-10">
         <div className="container mx-auto px-4 py-32">
@@ -62,75 +97,92 @@ const HomePage = () => {
             </div>
           ) : (
             <>
-              <section className="mb-16">
-                <h2 className="text-3xl font-semibold text-white mb-8 text-center">
-                  Featured Packages
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredPackages.slice(0, 3).map(pkg => (
-                    <div key={pkg._id} className="bg-white backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
-                      {pkg.imageUrl && (
-                        <div className="w-full h-48 overflow-hidden">
-                          <img 
-                            src={`http://localhost:5000${pkg.imageUrl}`}
-                            alt={pkg.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className="p-6">
-                        <h3 className="text-xl font-semibold text-black mb-4">{pkg.name}</h3>
-                        <div className="space-y-2 mb-6">
-                          <p className="text-gray-800">Location: {pkg.location}</p>
-                          <p className="text-primary-800 font-bold">Price: ${pkg.price}</p>
-                          <p className="text-gray-800">Duration: {pkg.duration}</p>
-                        </div>
-                        <button 
-                          className="w-full bg-primary-400 text-white px-4 py-2 rounded-lg hover:bg-primary-500 transition-colors"
-                          onClick={() => window.location.href = `/package/${pkg._id}`}
-                        >
-                          View Details
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+              {filteredPackages.length === 0 ? (
+                <div className="text-center text-white bg-black/30 rounded-lg p-8 backdrop-blur-sm">
+                  <h2 className="text-2xl font-semibold mb-4">No packages found</h2>
+                  <p>Try adjusting your search or come back later for new destinations.</p>
                 </div>
-              </section>
+              ) : (
+                <>
+                  <section className="mb-16">
+                    <h2 className="text-3xl font-semibold text-white mb-8 text-center">
+                      Featured Packages
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {filteredPackages.slice(0, 3).map(pkg => (
+                        <div key={pkg._id} className="bg-white backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                          {pkg.imageUrl && (
+                            <div className="w-full h-48 overflow-hidden">
+                              <img 
+                                src={`http://localhost:5000${pkg.imageUrl}`}
+                                alt={pkg.name || 'Package image'}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found';
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div className="p-6">
+                            <h3 className="text-xl font-semibold text-black mb-4">{pkg.name || 'Unnamed Package'}</h3>
+                            <div className="space-y-2 mb-6">
+                              <p className="text-gray-800">Location: {pkg.location || 'N/A'}</p>
+                              <p className="text-primary-800 font-bold">Price: ${pkg.price || '0'}</p>
+                              <p className="text-gray-800">Duration: {pkg.duration || 'N/A'}</p>
+                            </div>
+                            <button 
+                              className="w-full bg-primary-400 text-white px-4 py-2 rounded-lg hover:bg-primary-500 transition-colors"
+                              onClick={() => window.location.href = `/package/${pkg._id}`}
+                            >
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
 
-              <section className="mb-16">
-                <h2 className="text-3xl font-semibold text-white mb-8 text-center">
-                  All Destinations
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredPackages.map(pkg => (
-                    <div key={pkg._id} className="bg-white backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
-                      {pkg.imageUrl && (
-                        <div className="w-full h-48 overflow-hidden">
-                          <img 
-                            src={`http://localhost:5000${pkg.imageUrl}`}
-                            alt={pkg.name}
-                            className="w-full h-full object-cover"
-                          />
+                  <section className="mb-16">
+                    <h2 className="text-3xl font-semibold text-white mb-8 text-center">
+                      All Destinations
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {filteredPackages.map(pkg => (
+                        <div key={pkg._id} className="bg-white backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                          {pkg.imageUrl && (
+                            <div className="w-full h-48 overflow-hidden">
+                              <img 
+                                src={`http://localhost:5000${pkg.imageUrl}`}
+                                alt={pkg.name || 'Package image'}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found';
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div className="p-6">
+                            <h3 className="text-xl font-semibold text-black mb-4">{pkg.name || 'Unnamed Package'}</h3>
+                            <div className="space-y-2 mb-6">
+                              <p className="text-gray-800">Location: {pkg.location || 'N/A'}</p>
+                              <p className="text-primary-800 font-bold">Price: ${pkg.price || '0'}</p>
+                              <p className="text-gray-800">Duration: {pkg.duration || 'N/A'}</p>
+                            </div>
+                            <button 
+                              className="w-full bg-primary-400 text-white px-4 py-2 rounded-lg hover:bg-primary-500 transition-colors"
+                              onClick={() => window.location.href = `/package/${pkg._id}`}
+                            >
+                              View Details
+                            </button>
+                          </div>
                         </div>
-                      )}
-                      <div className="p-6">
-                        <h3 className="text-xl font-semibold text-black mb-4">{pkg.name}</h3>
-                        <div className="space-y-2 mb-6">
-                          <p className="text-gray-800">Location: {pkg.location}</p>
-                          <p className="text-primary-800 font-bold">Price: ${pkg.price}</p>
-                          <p className="text-gray-800">Duration: {pkg.duration}</p>
-                        </div>
-                        <button 
-                          className="w-full bg-primary-400 text-white px-4 py-2 rounded-lg hover:bg-primary-500 transition-colors"
-                          onClick={() => window.location.href = `/package/${pkg._id}`}
-                        >
-                          View Details
-                        </button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </section>
+                  </section>
+                </>
+              )}
             </>
           )}
         </div>
