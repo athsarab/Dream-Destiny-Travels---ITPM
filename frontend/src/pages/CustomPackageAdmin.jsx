@@ -97,7 +97,7 @@ const CustomPackageAdmin = () => {
       }));
       
       // Use full URL path like the get method in fetchData
-      const response = await api.post('/api/custom-packages/options', {
+      const response = await api.axios.post('/api/custom-packages/options', {
         name: formData.category,
         options: formattedOptions
       });
