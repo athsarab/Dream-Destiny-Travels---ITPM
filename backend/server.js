@@ -15,10 +15,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Configure CORS properly
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
-  credentials: true
+
 }));
 
 // Add request logging middleware
@@ -40,6 +37,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // Routes
+app.use('/api/auth', require('./routes/authRoutes'));
+
 app.use('/api/packages', require('./routes/packageRoutes'));
 app.use('/api/custom-packages', require('./routes/customPackageRoutes'));
 app.use('/api/employees', require('./routes/employeeRoutes'));
