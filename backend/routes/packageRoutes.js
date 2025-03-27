@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middleware/upload');
+const Package = require('../models/Package'); // Add this line
 const PackageBooking = require('../models/PackageBooking');
+const upload = require('../middleware/upload');
 const {
     getPackages,
     getPackage,
@@ -9,6 +10,11 @@ const {
     updatePackage,
     deletePackage
 } = require('../controllers/packageController');
+
+// Add health check endpoint at the top of the file
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
 
 // Debug middleware
 router.use((req, res, next) => {
@@ -66,11 +72,58 @@ router.put('/bookings/:id', async (req, res) => {
     }
 });
 
-// Package routes
-router.get('/', getPackages);
+// Add public packages route with error handling
+router.get('/public', async (req, res) => {
+  try {
+    console.log('Fetching public packages');
+    const packages = await Package.find({ status: 'active' })
+      .select('-__v')
+      .sort('-createdAt')
+      .lean();
+    
+    console.log(`Found ${packages.length} public packages`);
+    res.json(packages);
+  } catch (error) {
+    console.error('Error fetching public packages:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch packages',
+      error: error.message 
+    });
+  }
+});
+
+// Update main packages route with better error handling
+router.get('/', async (req, res) => {
+  try {
+    console.log('Fetching all packages');
+    const packages = await Package.find()
+      .select('-__v')
+      .sort('-createdAt')
+      .lean();
+    
+    console.log(`Found ${packages?.length || 0} packages`);
+    
+    if (!packages || packages.length === 0) {
+      return res.json([]);
+    }
+    
+    res.json(packages);
+  } catch (error) {
+    console.error('Error fetching packages:', error);
+    res.status(500).json({ 
+      message: 'Internal server error while fetching packages',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 router.get('/:id', getPackage);
 router.post('/', upload.single('image'), createPackage);
 router.put('/:id', upload.single('image'), updatePackage);
 router.delete('/:id', deletePackage);
+
+// Add a route to serve uploaded files
+router.use('/uploads', express.static('uploads'));
 
 module.exports = router;

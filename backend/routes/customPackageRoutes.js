@@ -173,4 +173,18 @@ router.put('/bookings/:id', async (req, res) => {
     }
 });
 
+// Delete booking
+router.delete('/bookings/:id', async (req, res) => {
+    try {
+        const booking = await CustomPackageBooking.findByIdAndDelete(req.params.id);
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+        res.json({ message: 'Booking deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting booking:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 module.exports = router;

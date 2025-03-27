@@ -51,12 +51,12 @@ const PackagePage = () => {
         <h1 className="text-3xl font-bold p-6 border-b border-dark-300">{package_.name || 'Unnamed Package'}</h1>
         {package_.imageUrl && (
           <img 
-            src={`http://localhost:5000${package_.imageUrl}`} 
+            src={package_.imageUrl} 
             alt={package_.name || 'Package image'} 
             className="w-full h-64 object-cover"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = 'https://via.placeholder.com/800x400?text=Image+Not+Found';
+              e.target.src = '/images/placeholder.jpg';
             }}
           />
         )}

@@ -1,12 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const PackageCard = ({ pkg }) => {
-  // Add safety check at the beginning
-  if (!pkg || !pkg._id) {
-    return null; // Return nothing if package is invalid
-  }
-
+const PackageCard = ({ package: pkg }) => {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden transform transition-transform hover:scale-105">
       {pkg.imageUrl && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import PackageForm from '../components/Admin/PackageForm';
 import PackageBookingsList from '../components/Admin/PackageBookingsList';
 import api from '../services/api'; // Import api service instead of axios
@@ -13,22 +13,29 @@ const AdminDashboard = () => {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
 
-  // Check server health first
+  // Update server check
   useEffect(() => {
     const checkServer = async () => {
       try {
+        console.log('Checking server health...');
+        setServerStatus('checking');
+        setLoading(true);
+        
         const isHealthy = await api.checkHealth();
-        setServerStatus(isHealthy ? 'online' : 'offline');
+        console.log('Server health check:', isHealthy);
         
         if (isHealthy) {
-          fetchPackages();
+          setServerStatus('online');
+          await fetchPackages();
         } else {
-          setError('Backend server appears to be offline. Please ensure the server is running.');
-          setLoading(false);
+          setServerStatus('offline');
+          setError('Backend server is not responding properly.');
         }
       } catch (err) {
+        console.error('Server check failed:', err);
         setServerStatus('offline');
         setError('Could not connect to the backend server. Please ensure it is running.');
+      } finally {
         setLoading(false);
       }
     };
@@ -39,45 +46,15 @@ const AdminDashboard = () => {
   // Define fetchPackages as a standalone function that can be called from anywhere
   const fetchPackages = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      console.log('Fetching packages from API...');
-      
-      // Use the api service instead of direct axios
+      console.log('Fetching packages...');
       const response = await api.getPackages();
-      
-      console.log('API Response received:', response);
-      
-      if (response && response.data) {
-        // Ensure we only set valid package objects that have a name property
-        const validPackages = Array.isArray(response.data) 
-          ? response.data.filter(pkg => pkg && typeof pkg === 'object' && pkg.name) 
-          : [];
-          
-        setPackages(validPackages);
-        console.log('Packages loaded successfully:', validPackages.length);
-      } else {
-        throw new Error('No valid data received from API');
-      }
-    } catch (err) {
-      console.error('Error fetching packages:', err);
-      
-      // Provide more specific error messages
-      let errorMessage = 'Failed to load packages: ';
-      
-      if (err.code === 'ECONNREFUSED' || err.message.includes('Network Error')) {
-        errorMessage += 'Network Error - Unable to connect to the backend server';
-      } else if (err.response?.status === 404) {
-        errorMessage += 'API endpoint not found';
-      } else if (err.response?.data?.message) {
-        errorMessage += err.response.data.message;
-      } else {
-        errorMessage += err.message || 'Unknown error';
-      }
-      
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
+      console.log('Packages received:', response.data);
+      setPackages(response.data);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching packages:', error);
+      setError('Failed to load packages. Please check server connection.');
+      setPackages([]);
     }
   };
 
@@ -94,6 +71,26 @@ const AdminDashboard = () => {
   const handlePackageAdded = (newPackage) => {
     setPackages([...packages, newPackage]);
     setShowForm(false);
+  };
+
+  // Handle navigation to custom package management - modify this function
+  const handleCustomPackageClick = () => {
+    console.log("Navigating to custom packages page");
+    // Use both approaches for maximum reliability
+    try {
+      navigate('/admin/custom-packages');
+      
+      // Set a fallback in case navigate doesn't work
+      setTimeout(() => {
+        if (window.location.pathname !== '/admin/custom-packages') {
+          console.log('Using window.location fallback for navigation');
+          window.location.href = '/admin/custom-packages';
+        }
+      }, 500);
+    } catch (err) {
+      console.error('Navigation failed:', err);
+      window.location.href = '/admin/custom-packages';
+    }
   };
 
   // Safely filter packages with extra null handling
@@ -144,11 +141,10 @@ const AdminDashboard = () => {
             >
               Try Again
             </button>
-            <div className="text-left bg-gray-800/50 p-4 rounded-lg">
-              <p className="text-white font-semibold mb-2">Troubleshooting:</p>
-              <ul className="text-gray-300 text-sm list-disc pl-5 space-y-1">
-                <li>Make sure the backend server is running</li>
-                <li>Check that MongoDB is connected</li>
+            <div className="text-left text-gray-300 p-4 bg-black/20 rounded-lg">
+              <p className="font-semibold mb-2">Troubleshooting tips:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Check if the backend server is running</li>
                 <li>Verify that the API routes are properly configured</li>
                 <li>Check network connectivity between frontend and backend</li>
               </ul>
@@ -159,7 +155,6 @@ const AdminDashboard = () => {
     );
   }
 
-  // Rest of component remains unchanged
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 p-6 pt-24">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -170,11 +165,12 @@ const AdminDashboard = () => {
           <h1 className="text-4xl font-bold text-transparent bg-clip-text 
                        bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500
                        drop-shadow-lg">
-            Package Management Dashboard 
+            Package Management Dashboard
           </h1>
           <div className="flex gap-4">
-            <button
-              onClick={() => navigate('/admin/custom-packages')}
+            {/* Replace anchor with button that uses our enhanced navigation function */}
+            <button  
+              onClick={handleCustomPackageClick}
               className="bg-gradient-to-r from-pink-600 to-purple-600 text-white 
                        px-6 py-3 rounded-xl shadow-lg hover:shadow-pink-500/50
                        transition-all duration-300 transform hover:scale-105
@@ -186,7 +182,7 @@ const AdminDashboard = () => {
             <button
               onClick={() => setShowForm(!showForm)}
               className={`${
-                showForm 
+                showForm
                   ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500' 
                   : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500'
               } text-white px-6 py-3 rounded-xl shadow-lg
@@ -197,13 +193,13 @@ const AdminDashboard = () => {
             </button>
           </div>
         </div>
-        
+
         {/* Form Section */}
         {showForm && (
           <div className="transform transition-all duration-300 ease-in-out animate-fade-in"> 
             <PackageForm onPackageAdded={handlePackageAdded} />
           </div>
-        )}  
+        )}
 
         {/* Search Section */}
         <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-6 border border-white/20">
@@ -236,14 +232,14 @@ const AdminDashboard = () => {
                                         hover:-translate-y-2">
                 {pkg.imageUrl && (
                   <div className="w-full h-48 overflow-hidden">
-                    <img 
-                      src={`http://localhost:5000${pkg.imageUrl}`}
+                    <img
+                      src={pkg.imageUrl}
                       alt={pkg.name || 'Package image'}
                       className="w-full h-full object-cover group-hover:scale-110 
                               transition-transform duration-500 ease-out"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found';
+                        e.target.src = '/images/placeholder.jpg';
                       }}
                     />
                   </div>
@@ -261,7 +257,7 @@ const AdminDashboard = () => {
                     <p className="text-gray-300"><span className="text-purple-300">Duration:</span> {pkg.duration || 'N/A'}</p>
                   </div>
                   <div className="flex gap-4 pt-4">
-                    <button 
+                    <button
                       onClick={() => navigate(`/admin/edit/${pkg._id}`)}
                       className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600
                               hover:from-blue-500 hover:to-indigo-500 text-white 
@@ -270,7 +266,7 @@ const AdminDashboard = () => {
                     >
                       Edit
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDelete(pkg._id)}
                       className="flex-1 bg-gradient-to-r from-red-600 to-pink-600
                               hover:from-red-500 hover:to-pink-500 text-white 

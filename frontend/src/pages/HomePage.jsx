@@ -9,28 +9,54 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
- 
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const response = await api.getPackages();  // Use api service instead of axios directly
-        
-        // Make sure we have valid data before setting state
-        if (response && response.data) {
-          setPackages(response.data || []);
-        } else {
-          console.warn('No package data received from API');
-          setPackages([]);
-        }
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching packages:', error);
-        setError('Failed to load packages. Please try again later.');
-        setLoading(false);
+
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Initiating package fetch...');
+      
+      // Try to get server health first
+      const isServerHealthy = await api.checkHealth();
+      if (!isServerHealthy) {
+        console.warn('Server health check failed - attempting to fetch packages anyway');
       }
-    };
+      
+      const response = await api.getPackages();
+      console.log('Package fetch successful from ' + response.source);
+      
+      if (response.data && Array.isArray(response.data)) {
+        setPackages(response.data);
+      } else {
+        console.warn('Received unexpected data format:', response.data);
+        setPackages([]);
+        setError('Received invalid data from server');
+      }
+    } catch (error) {
+      console.error('Package fetch error:', {
+        message: error.message,
+        stack: error.stack
+      });
+      setError(error.message || 'Failed to load packages. Please try again later.');
+      setPackages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPackages();
-  }, []);
+    
+    // Add recovery mechanism - if failed, try again in 5 seconds (but only once)
+    const retryTimeout = setTimeout(() => {
+      if (error) {
+        console.log('Attempting automatic retry after error...');
+        fetchPackages();
+      }
+    }, 5000);
+    
+    return () => clearTimeout(retryTimeout);
+  }, [error]);
 
   // Add more robust filtering with null checks
   const filteredPackages = packages && packages.filter ? 
@@ -43,24 +69,25 @@ const HomePage = () => {
     ) : [];
 
   // Show empty state when no packages or error
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+    </div>;
+  }
+
   if (error) {
-    return (
-      <div className="min-h-screen relative overflow-hidden">
-        <VideoBackground />
-        <div className="relative z-10 flex items-center justify-center h-screen">
-          <div className="bg-black/50 p-8 rounded-xl backdrop-blur-md text-center">
-            <h2 className="text-2xl font-bold text-white mb-4">Oops! Something went wrong</h2>
-            <p className="text-gray-300 mb-6">{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
+    return <div className="flex justify-center items-center min-h-screen">
+      <div className="text-red-500 text-center">
+        <p className="text-xl font-semibold mb-2">Error Loading Packages</p>
+        <p>{error}</p>
+        <button 
+          onClick={fetchPackages}
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Try Again
+        </button>
       </div>
-    );
+    </div>;
   }
 
   return (
@@ -114,12 +141,12 @@ const HomePage = () => {
                           {pkg.imageUrl && (
                             <div className="w-full h-48 overflow-hidden">
                               <img 
-                                src={`http://localhost:5000${pkg.imageUrl}`}
+                                src={pkg.imageUrl}
                                 alt={pkg.name || 'Package image'}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found';
+                                  e.target.src = '/images/placeholder.jpg';
                                 }}
                               />
                             </div>
@@ -153,12 +180,12 @@ const HomePage = () => {
                           {pkg.imageUrl && (
                             <div className="w-full h-48 overflow-hidden">
                               <img 
-                                src={`http://localhost:5000${pkg.imageUrl}`}
+                                src={pkg.imageUrl}
                                 alt={pkg.name || 'Package image'}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found';
+                                  e.target.src = '/images/placeholder.jpg';
                                 }}
                               />
                             </div>
