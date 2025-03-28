@@ -88,7 +88,7 @@ const CustomPackageAdmin = () => {
     e.preventDefault();
     try {
       console.log('Submitting form data:', formData);
-      
+       
       // Ensure price is properly converted to number
       const formattedOptions = formData.options.map(opt => ({
         name: opt.name,
