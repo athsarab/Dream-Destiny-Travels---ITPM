@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const Vehicle = require('../models/Vehicle');
-const { sendWhatsAppNotification } = require('../utils/whatsappNotifications');
 const mongoose = require('mongoose');
 
 // Get all vehicles

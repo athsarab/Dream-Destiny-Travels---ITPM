@@ -9,7 +9,7 @@ const vehicleRoutes = require('./routes/vehicleRoutes');
 const app = express();
 
 // Essential middleware
-app.use(express.json());
+app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
 // Basic CORS setup

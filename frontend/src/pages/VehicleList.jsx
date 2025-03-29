@@ -82,6 +82,22 @@ const VehicleList = () => {
     vehicle.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Function to determine license status with conditional styling
+  const getLicenseStatus = (expiryDate) => {
+    const currentDate = new Date();
+    const expiry = new Date(expiryDate);
+    const daysRemaining = Math.floor((expiry - currentDate) / (1000 * 60 * 60 * 24));
+
+    if (expiry < currentDate) {
+        return <span>| <span style={{ color: 'red' }}>Expired</span></span>;
+      } else if (daysRemaining <= 3) {
+        return <span>| <span style={{ color: 'yellow' }}>{daysRemaining} Days left</span></span>;
+      } else if (daysRemaining <= 7) {
+        return <span>| {daysRemaining} Days left</span>;
+      }
+      
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black p-6 pt-24">
       <div className="max-w-7xl mx-auto">
@@ -132,7 +148,7 @@ const VehicleList = () => {
                       <p className="text-gray-300">Seats: {vehicle.seats}</p>
                       <p className="text-gray-300">Fuel Type: {vehicle.fuelType}</p>
                       <p className="text-gray-300">License Updated: {new Date(vehicle.licenseInsuranceUpdated).toLocaleDateString()}</p>
-                      <p className="text-gray-300">License Expiry: {new Date(vehicle.licenseInsuranceExpiry).toLocaleDateString()}</p>
+                      <p className="text-gray-300">License Expiry: {new Date(vehicle.licenseInsuranceExpiry).toLocaleDateString()} {getLicenseStatus(vehicle.licenseInsuranceExpiry)}</p>
                       <p className="text-gray-300">Status: {vehicle.status}</p>
                     </div>
                     <div className="flex gap-4">
