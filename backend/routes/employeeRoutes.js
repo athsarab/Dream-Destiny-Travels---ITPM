@@ -11,7 +11,7 @@ router.use((req, res, next) => {
 // Get all employees
 router.get('/', async (req, res) => {
     try {
-        const employees = await Employee.find();
+        const employees = await Employee.find().sort('-createdAt'); // Add sorting
         res.json(employees);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -56,7 +56,42 @@ router.get('/:id', async (req, res) => {
 // Add new employee
 router.post('/', async (req, res) => {
     try {
-        const { phoneNumber } = req.body;
+        const { employeeId, phoneNumber, nic, email, salary } = req.body;
+
+        // Check for duplicates
+        const duplicateEmployee = await Employee.findOne({
+            $or: [
+                { employeeId: employeeId },
+                { phoneNumber: phoneNumber },
+                { nic: nic },
+                { email: email }
+            ]
+        });
+
+        if (duplicateEmployee) {
+            let duplicateField = '';
+            if (duplicateEmployee.employeeId === employeeId) duplicateField = 'Employee ID';
+            else if (duplicateEmployee.phoneNumber === phoneNumber) duplicateField = 'Phone Number';
+            else if (duplicateEmployee.nic === nic) duplicateField = 'NIC';
+            else if (duplicateEmployee.email === email) duplicateField = 'Email';
+
+            return res.status(400).json({
+                message: `${duplicateField} already exists. Please use a different ${duplicateField.toLowerCase()}.`
+            });
+        }
+
+        // Salary validation
+        if (salary > 2500) {
+            return res.status(400).json({ 
+                message: 'Salary cannot exceed $2,500' 
+            });
+        }
+
+        if (salary <= 0) {
+            return res.status(400).json({ 
+                message: 'Salary must be greater than 0' 
+            });
+        }
 
         // Phone number validation
         const phoneRegex = /^\d{10}$/;
@@ -82,6 +117,31 @@ router.post('/', async (req, res) => {
 // Update employee
 router.put('/:id', async (req, res) => {
     try {
+        const { employeeId, phoneNumber, nic, email } = req.body;
+
+        // Check for duplicates excluding current employee
+        const duplicateEmployee = await Employee.findOne({
+            _id: { $ne: req.params.id },
+            $or: [
+                { employeeId: employeeId },
+                { phoneNumber: phoneNumber },
+                { nic: nic },
+                { email: email }
+            ]
+        });
+
+        if (duplicateEmployee) {
+            let duplicateField = '';
+            if (duplicateEmployee.employeeId === employeeId) duplicateField = 'Employee ID';
+            else if (duplicateEmployee.phoneNumber === phoneNumber) duplicateField = 'Phone Number';
+            else if (duplicateEmployee.nic === nic) duplicateField = 'NIC';
+            else if (duplicateEmployee.email === email) duplicateField = 'Email';
+
+            return res.status(400).json({
+                message: `${duplicateField} already exists. Please use a different ${duplicateField.toLowerCase()}.`
+            });
+        }
+
         const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(employee);
     } catch (error) {

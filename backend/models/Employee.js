@@ -36,7 +36,15 @@ const employeeSchema = new mongoose.Schema({
     },
     salary: {
         type: Number,
-        required: true
+        required: true,
+        min: [0, 'Salary cannot be negative'],
+        max: [2500, 'Salary cannot exceed $2,500'],
+        validate: {
+            validator: function(v) {
+                return v <= 2500;
+            },
+            message: 'Maximum salary allowed is $2,500'
+        }
     },
     joinDate: {
         type: Date,

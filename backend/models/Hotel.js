@@ -19,19 +19,19 @@ const hotelSchema = new mongoose.Schema({
     pricePerNight: {
         type: Number,
         required: [true, 'Price per night is required'],
-        min: [0, 'Price cannot be negative']
+        min: [0, 'Price cannot be negative'],
+        max: [2500, 'Price cannot exceed $2,500'],
+        validate: {
+            validator: function(v) {
+                return v >= 0 && v <= 2500;
+            },
+            message: props => `${props.value} is not a valid price! Price must be between $0 and $2,500`
+        }
     },
     roomType: {
         type: String,
         required: [true, 'Room type is required'],
         enum: ['single', 'double', 'suite', 'deluxe']
-    },
-    facilities: {
-        type: [{
-            type: String,
-            trim: true
-        }],
-        default: []
     },
     contactNumber: {
         type: String,
@@ -45,14 +45,6 @@ const hotelSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
-});
-
-// Add pre-save middleware to ensure facilities is an array
-hotelSchema.pre('save', function(next) {
-    if (!Array.isArray(this.facilities)) {
-        this.facilities = [];
-    }
-    next();
 });
 
 module.exports = mongoose.model('Hotel', hotelSchema);

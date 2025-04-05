@@ -41,39 +41,61 @@ router.get('/:id', async (req, res) => {
 // Add new hotel
 router.post('/', async (req, res) => {
     try {
-        const { contactNumber } = req.body;
-
-        // Strict phone number validation
-        const phoneRegex = /^\d{10}$/;
-        if (!contactNumber || !phoneRegex.test(contactNumber)) {
-            return res.status(400).json({ 
-                message: 'Contact number must be exactly 10 digits' 
-            });
-        }
-
         console.log('Received hotel data:', req.body);
 
-        // Data validation
-        const hotel = new Hotel(req.body);
-        const validationError = hotel.validateSync();
+        // 1. Validate required fields
+        const requiredFields = ['name', 'location', 'roomType', 'contactNumber', 'availableRooms', 'pricePerNight'];
+        const missingFields = requiredFields.filter(field => !req.body[field]);
         
-        if (validationError) {
-            console.log('Validation errors:', validationError.errors);
+        if (missingFields.length > 0) {
             return res.status(400).json({
-                message: 'Validation failed',
-                errors: Object.values(validationError.errors).map(err => err.message)
+                message: `Missing required fields: ${missingFields.join(', ')}`
             });
         }
 
+        // 2. Phone number validation
+        const phoneRegex = /^\d{10}$/;
+        if (!phoneRegex.test(req.body.contactNumber)) {
+            return res.status(400).json({
+                message: 'Contact number must be exactly 10 digits'
+            });
+        }
+
+        // 3. Price validation
+        if (parseFloat(req.body.pricePerNight) > 2500) {
+            return res.status(400).json({
+                message: 'Price per night cannot exceed $2,500'
+            });
+        }
+
+        if (parseFloat(req.body.pricePerNight) <= 0) {
+            return res.status(400).json({
+                message: 'Price per night must be greater than 0'
+            });
+        }
+
+        // 4. Data type validation and conversion
+        const hotelData = {
+            name: req.body.name.trim(),
+            location: req.body.location.trim(),
+            availableRooms: Math.max(0, parseInt(req.body.availableRooms)),
+            pricePerNight: Math.max(0, parseFloat(req.body.pricePerNight)),
+            roomType: req.body.roomType,
+            contactNumber: req.body.contactNumber.trim(),
+            status: 'available'
+        };
+
+        // 5. Create and save hotel
+        const hotel = new Hotel(hotelData);
         const savedHotel = await hotel.save();
-        console.log('Hotel saved:', savedHotel);
+        console.log('Hotel saved successfully:', savedHotel);
         res.status(201).json(savedHotel);
+
     } catch (error) {
         console.error('Error creating hotel:', error);
         res.status(400).json({
             message: 'Failed to create hotel',
-            error: error.message,
-            details: error.errors || error
+            error: error.message
         });
     }
 });
@@ -104,6 +126,19 @@ router.put('/:id', async (req, res) => {
         if (missingFields.length > 0) {
             return res.status(400).json({
                 message: `Missing required fields: ${missingFields.join(', ')}`
+            });
+        }
+
+        // Add price validation
+        if (parseFloat(req.body.pricePerNight) > 2500) {
+            return res.status(400).json({
+                message: 'Price per night cannot exceed $2,500'
+            });
+        }
+
+        if (parseFloat(req.body.pricePerNight) <= 0) {
+            return res.status(400).json({
+                message: 'Price per night must be greater than 0'
             });
         }
 

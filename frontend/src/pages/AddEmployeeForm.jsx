@@ -131,6 +131,23 @@ const AddEmployeeForm = () => {
   };
 
   const validateForm = () => {
+    // Add salary validation
+    if (!formData.salary) {
+      alert('Please enter a salary amount');
+      return false;
+    }
+
+    const salary = parseFloat(formData.salary);
+    if (salary > 2500) {
+      alert('Salary cannot exceed $2,500');
+      return false;
+    }
+
+    if (salary <= 0) {
+      alert('Salary must be greater than 0');
+      return false;
+    }
+
     // Add phone validation
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(formData.phoneNumber)) {
@@ -187,11 +204,14 @@ const AddEmployeeForm = () => {
       }
       console.log('Server response:', response.data);
       alert(id ? 'Employee updated successfully!' : 'Employee added successfully!');
-      navigate('/employee-manager/employee-list');
+      
+      // Force reload of employee list by adding timestamp parameter
+      navigate('/employee-manager/employee-list?t=' + new Date().getTime());
+
     } catch (error) {
       console.error('Error details:', error.response?.data || error);
       const errorMessage = error.response?.data?.message || error.message;
-      setError(`Failed to ${id ? 'update' : 'add'} employee: ${errorMessage}`);
+      alert(errorMessage); // Show the specific duplicate field error
     } finally {
       setIsLoading(false);
     }
@@ -290,13 +310,27 @@ const AddEmployeeForm = () => {
               </select>
             </div>
             <div>
-              <label className="block text-gray-400 mb-2">Salary</label>
+              <label className="block text-gray-400 mb-2">Salary ($)</label>
               <input
                 type="number"
                 required
+                min="0"
+                max="2500"
+                step="0.01"
                 value={formData.salary}
-                onChange={(e) => setFormData({...formData, salary: e.target.value})}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '') {
+                    setFormData({...formData, salary: ''});
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (numValue <= 2500) {
+                      setFormData({...formData, salary: value});
+                    }
+                  }
+                }}
                 className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500"
+                placeholder="Maximum salary: $2,500"
               />
             </div>
             <div className="flex gap-4 pt-4">

@@ -76,6 +76,18 @@ const EditHotel = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Add price validation
+      const pricePerNight = parseFloat(formData.pricePerNight);
+      if (pricePerNight > 2500) {
+        alert('Price per night cannot exceed $2,500');
+        return;
+      }
+
+      if (pricePerNight <= 0) {
+        alert('Price per night must be greater than 0');
+        return;
+      }
+
       // Phone validation
       const phoneRegex = /^\d{10}$/;
       if (!phoneRegex.test(formData.contactNumber)) {
@@ -181,9 +193,21 @@ const EditHotel = () => {
               <input
                 type="number"
                 required
+                min="0"
+                max="2500"
+                step="0.01"
                 value={formData.pricePerNight}
-                onChange={(e) => setFormData({...formData, pricePerNight: e.target.value})}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const numValue = parseFloat(value);
+                  if (value === '') {
+                    setFormData({...formData, pricePerNight: ''});
+                  } else if (numValue <= 2500) {
+                    setFormData({...formData, pricePerNight: value});
+                  }
+                }}
                 className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
+                placeholder="Maximum price: $2,500"
               />
             </div>
 
