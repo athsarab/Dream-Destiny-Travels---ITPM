@@ -1,4 +1,12 @@
-require('dotenv').config();
+try {
+  require('dotenv').config();
+} catch (err) {
+  console.error('Error loading dotenv. Make sure to run "npm install dotenv"');
+  console.error('Using default environment variables instead');
+  // Set default values if .env fails to load
+  process.env.PORT = process.env.PORT || 5000;
+}
+
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -8,23 +16,21 @@ const vehicleRoutes = require('./routes/vehicleRoutes');
 
 const app = express();
 
-// Essential middleware
-app.use(express.json()); 
-app.use(express.urlencoded({ extended: true }));
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+}
 
-// Basic CORS setup
+// Middleware
 app.use(cors({
   origin: ['http://localhost:5174', 'http://localhost:5173'], // Allow both ports
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type'],
   credentials: true
 }));
-
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
-}
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
@@ -33,13 +39,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files from uploads directory
+// Serve static files from uploads directory with correct path
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Connect to MongoDB
 connectDB();
 
-// Mount the routes
+// Routes
 app.use('/api/packages', require('./routes/packageRoutes'));
 app.use('/api/custom-packages', require('./routes/customPackageRoutes'));
 app.use('/api/employees', require('./routes/employeeRoutes'));
