@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
+// Define role-based salary limits
+const SALARY_LIMITS = {
+  'Driver': 500,
+  'Travel Agent': 1200,
+  'Supplier': 450,
+  'Worker': 350
+};
+
 const AddEmployeeForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -19,10 +27,16 @@ const AddEmployeeForm = () => {
   const [validationErrors, setValidationErrors] = useState({
     email: '',
     nic: '',
-    phoneNumber: ''
+    phoneNumber: '',
+    salary: ''
   });
 
   const roles = ['Travel Agent', 'Driver', 'Worker', 'Supplier'];
+
+  // Helper function to get max salary for a role
+  const getMaxSalaryForRole = (role) => {
+    return SALARY_LIMITS[role] || 2500; // Default to global max if role not found
+  };
 
   // Fetch employee data if in edit mode
   useEffect(() => {
@@ -116,6 +130,18 @@ const AddEmployeeForm = () => {
         const phoneRegex = /^\d{10}$/;
         return !phoneRegex.test(value) ? 
           'Phone number must be exactly 10 digits' : '';
+      case 'salary':
+        if (!formData.role) {
+          return '';
+        }
+        const maxSalary = getMaxSalaryForRole(formData.role);
+        if (parseFloat(value) > maxSalary) {
+          return `Salary cannot exceed $${maxSalary} for ${formData.role} role`;
+        }
+        if (parseFloat(value) <= 0) {
+          return 'Salary must be greater than 0';
+        }
+        return '';
       default:
         return '';
     }
@@ -123,6 +149,49 @@ const AddEmployeeForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Special handling for salary to enforce role-based limits
+    if (name === 'salary' && formData.role) {
+      const maxSalary = getMaxSalaryForRole(formData.role);
+      
+      // For empty input, allow clearing the field
+      if (value === '') {
+        setFormData(prev => ({...prev, [name]: ''}));
+        setValidationErrors(prev => ({...prev, salary: ''}));
+        return;
+      }
+      
+      // Only allow numeric input
+      if (!/^\d*\.?\d*$/.test(value)) {
+        return; // Don't update for non-numeric input
+      }
+      
+      const numValue = parseFloat(value);
+      
+      // Check if the value would exceed maximum
+      if (numValue > maxSalary || value.length > maxSalary.toString().length + 4) {
+        // Don't update state if value exceeds maximum
+        return;
+      }
+      
+      // Allow the input if it's within limits
+      setFormData(prev => ({...prev, [name]: value}));
+      
+      // Validate the new value
+      if (numValue <= 0) {
+        setValidationErrors(prev => ({...prev, salary: 'Salary must be greater than 0'}));
+      } else if (numValue > maxSalary) {
+        setValidationErrors(prev => ({
+          ...prev, 
+          salary: `Maximum salary for ${formData.role} is $${maxSalary}`
+        }));
+      } else {
+        setValidationErrors(prev => ({...prev, salary: ''}));
+      }
+      return;
+    }
+    
+    // For other fields, use the existing logic
     setFormData(prev => ({...prev, [name]: value}));
     setValidationErrors(prev => ({
       ...prev,
@@ -130,15 +199,38 @@ const AddEmployeeForm = () => {
     }));
   };
 
+  // Handle role changes - reset salary
+  const handleRoleChange = (e) => {
+    const role = e.target.value;
+    setFormData(prev => ({
+      ...prev, 
+      role: role,
+      // Reset salary when role changes to enforce new limits
+      salary: ''
+    }));
+    
+    // Clear any salary validation errors
+    setValidationErrors(prev => ({
+      ...prev,
+      salary: ''
+    }));
+  };
+
   const validateForm = () => {
-    // Add salary validation
+    // Add salary validation based on role
     if (!formData.salary) {
       alert('Please enter a salary amount');
       return false;
     }
 
     const salary = parseFloat(formData.salary);
-    if (salary > 2500) {
+    if (formData.role) {
+      const maxSalary = getMaxSalaryForRole(formData.role);
+      if (salary > maxSalary) {
+        alert(`Salary cannot exceed $${maxSalary} for ${formData.role} role`);
+        return false;
+      }
+    } else if (salary > 2500) {
       alert('Salary cannot exceed $2,500');
       return false;
     }
@@ -148,13 +240,9 @@ const AddEmployeeForm = () => {
       return false;
     }
 
-    // Add phone validation
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(formData.phoneNumber)) {
-      setValidationErrors(prev => ({
-        ...prev,
-        phoneNumber: 'Phone number must be exactly 10 digits'
-      }));
+    // Other validations
+    if (!formData.name || !formData.employeeId || !formData.role || !formData.salary) {
+      alert('Please fill in all required fields');
       return false;
     }
 
@@ -163,9 +251,12 @@ const AddEmployeeForm = () => {
       return false;
     }
 
-    // Basic required field validation
-    if (!formData.name || !formData.employeeId || !formData.role || !formData.salary) {
-      alert('Please fill in all required fields');
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(formData.phoneNumber)) {
+      setValidationErrors(prev => ({
+        ...prev,
+        phoneNumber: 'Phone number must be exactly 10 digits'
+      }));
       return false;
     }
 
@@ -300,38 +391,71 @@ const AddEmployeeForm = () => {
               <select
                 required
                 value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                onChange={handleRoleChange}
                 className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500"
               >
                 <option value="">Select Role</option>
                 {roles.map(role => (
-                  <option key={role} value={role}>{role}</option>
+                  <option key={role} value={role}>
+                    {role} (Max Salary: ${getMaxSalaryForRole(role)})
+                  </option>
                 ))}
               </select>
             </div>
             <div>
               <label className="block text-gray-400 mb-2">Salary ($)</label>
-              <input
-                type="number"
-                required
-                min="0"
-                max="2500"
-                step="0.01"
-                value={formData.salary}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === '') {
-                    setFormData({...formData, salary: ''});
-                  } else {
-                    const numValue = parseFloat(value);
-                    if (numValue <= 2500) {
-                      setFormData({...formData, salary: value});
+              <div className="relative">
+                <span className="absolute left-3 top-3 text-gray-400">$</span>
+                <input
+                  type="text" // Changed from "number" to "text" for better control
+                  inputMode="decimal"
+                  pattern="[0-9]*\.?[0-9]*"
+                  name="salary"
+                  required
+                  value={formData.salary}
+                  onChange={handleChange}
+                  onKeyDown={(e) => {
+                    // Prevent users from using up/down arrows to bypass max value
+                    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                      e.preventDefault();
                     }
+                  }}
+                  onBlur={(e) => {
+                    // On blur, ensure value is a proper number and within limits
+                    if (formData.role && formData.salary) {
+                      const maxSalary = getMaxSalaryForRole(formData.role);
+                      let numValue = parseFloat(formData.salary);
+                      
+                      if (isNaN(numValue)) {
+                        setFormData(prev => ({...prev, salary: ''}));
+                      } else if (numValue > maxSalary) {
+                        setFormData(prev => ({...prev, salary: maxSalary.toString()}));
+                      } else if (numValue <= 0) {
+                        setFormData(prev => ({...prev, salary: '1'}));
+                      } else {
+                        // Format to 2 decimal places if needed
+                        setFormData(prev => ({...prev, salary: numValue.toString()}));
+                      }
+                    }
+                  }}
+                  className={`w-full p-3 pl-8 rounded-lg bg-gray-700/50 text-white border ${
+                    validationErrors.salary ? 'border-red-500' : 'border-gray-600'
+                  } focus:border-pink-500 focus:ring-2 focus:ring-pink-500`}
+                  placeholder={formData.role ? 
+                    `Maximum: $${getMaxSalaryForRole(formData.role)}` : 
+                    "Select a role first"
                   }
-                }}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500"
-                placeholder="Maximum salary: $2,500"
-              />
+                  disabled={!formData.role}
+                />
+                {formData.role && (
+                  <p className="text-xs text-amber-400 mt-1">
+                    Maximum salary for {formData.role}: ${getMaxSalaryForRole(formData.role)}
+                  </p>
+                )}
+                {validationErrors.salary && (
+                  <p className="mt-1 text-sm text-red-500">{validationErrors.salary}</p>
+                )}
+              </div>
             </div>
             <div className="flex gap-4 pt-4">
               <button

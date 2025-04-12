@@ -16,22 +16,28 @@ const hotelSchema = new mongoose.Schema({
         required: [true, 'Number of available rooms is required'],
         min: [0, 'Available rooms cannot be negative']
     },
-    pricePerNight: {
-        type: Number,
-        required: [true, 'Price per night is required'],
-        min: [0, 'Price cannot be negative'],
-        max: [2500, 'Price cannot exceed $2,500'],
+    roomTypes: {
+        type: [String],
+        required: [true, 'Room types are required'],
         validate: {
             validator: function(v) {
-                return v >= 0 && v <= 2500;
+                return v.length > 0;
             },
-            message: props => `${props.value} is not a valid price! Price must be between $0 and $2,500`
+            message: 'At least one room type must be selected'
         }
     },
-    roomType: {
-        type: String,
-        required: [true, 'Room type is required'],
-        enum: ['single', 'double', 'suite', 'deluxe']
+    roomPrices: {
+        type: Map,
+        of: Number,
+        required: [true, 'Room prices are required'],
+        validate: {
+            validator: function(v) {
+                // At least one price for each room type
+                if (!this.roomTypes) return false;
+                return this.roomTypes.every(type => v.get(type) > 0);
+            },
+            message: 'A price must be set for each room type'
+        }
     },
     contactNumber: {
         type: String,

@@ -4,6 +4,17 @@ import axios from 'axios';
 
 const AddHotel = () => {
   const navigate = useNavigate();
+  
+  // Define room type options with their corresponding maximum prices
+  const roomTypeOptions = [
+    { value: 'single', label: 'Single', maxPrice: 750 },
+    { value: 'double', label: 'Double', maxPrice: 900 },
+    { value: 'suite', label: 'Suite', maxPrice: 1000 },
+    { value: 'deluxe', label: 'Deluxe', maxPrice: 1500 },
+    { value: 'family', label: 'Family Room', maxPrice: 1250 },
+    { value: 'executive', label: 'Executive', maxPrice: 1750 }
+  ];
+  
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -44,9 +55,13 @@ const AddHotel = () => {
         return;
       }
 
-      // Price validation
-      if (parseFloat(cleanedData.pricePerNight) > 2500) {
-        alert('Price per night cannot exceed $2,500');
+      // Get the maximum price for the selected room type
+      const selectedRoomType = roomTypeOptions.find(option => option.value === cleanedData.roomType);
+      const maxPrice = selectedRoomType ? selectedRoomType.maxPrice : 750; // Default to lowest if not found
+      
+      // Price validation with room-specific maximum
+      if (parseFloat(cleanedData.pricePerNight) > maxPrice) {
+        alert(`Price per night for ${selectedRoomType.label} room cannot exceed $${maxPrice}`);
         return;
       }
 
@@ -55,7 +70,17 @@ const AddHotel = () => {
         return;
       }
 
-      const response = await axios.post('http://localhost:5000/api/hotels', cleanedData);
+      // Transform the data to match the expected structure in the backend
+      const roomPrices = {};
+      roomPrices[cleanedData.roomType] = parseFloat(cleanedData.pricePerNight);
+      
+      const apiData = {
+        ...cleanedData,
+        roomTypes: [cleanedData.roomType], // Convert single roomType to array of roomTypes
+        roomPrices: roomPrices // Add roomPrices object
+      };
+
+      const response = await axios.post('http://localhost:5000/api/hotels', apiData);
       
       if (response.data) {
         alert('Hotel added successfully!');
@@ -66,6 +91,12 @@ const AddHotel = () => {
       const errorMessage = error.response?.data?.message || 'Failed to add hotel';
       alert(errorMessage);
     }
+  };
+
+  // Helper function to get the maximum price for the current room type
+  const getCurrentMaxPrice = () => {
+    const selectedType = roomTypeOptions.find(option => option.value === formData.roomType);
+    return selectedType ? selectedType.maxPrice : 750;
   };
 
   return (
@@ -114,23 +145,42 @@ const AddHotel = () => {
             </div>
 
             <div>
+              <label className="block text-gray-400 mb-2">Room Type</label>
+              <select
+                required
+                value={formData.roomType}
+                onChange={(e) => setFormData({...formData, roomType: e.target.value})}
+                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
+              >
+                <option value="">Select Room Type</option>
+                {roomTypeOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} (Max: ${option.maxPrice})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="block text-gray-400 mb-2">Price Per Night ($)</label>
               <input
                 type="number"
                 required
-                min="0"
-                max="2500"
+                min="1"
+                max={getCurrentMaxPrice()}
                 step="0.01"
                 value={formData.pricePerNight}
                 onChange={(e) => {
                   const value = e.target.value;
                   const numValue = parseFloat(value);
+                  const maxPrice = getCurrentMaxPrice();
+                  
                   if (value === '') {
                     setFormData({...formData, pricePerNight: ''});
                   } else if (!isNaN(numValue)) {
-                    if (numValue > 2500) {
-                      alert('Price per night cannot exceed $2,500');
-                      setFormData({...formData, pricePerNight: '2500'});
+                    if (numValue > maxPrice) {
+                      alert(`Price per night cannot exceed $${maxPrice} for this room type`);
+                      setFormData({...formData, pricePerNight: maxPrice.toString()});
                     } else if (numValue < 0) {
                       alert('Price per night cannot be negative');
                       setFormData({...formData, pricePerNight: '0'});
@@ -140,25 +190,13 @@ const AddHotel = () => {
                   }
                 }}
                 className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
-                placeholder="Enter price (max: $2,500)"
+                placeholder={`Enter price (max: $${getCurrentMaxPrice()})`}
               />
-              <p className="text-sm text-red-400 mt-1">Maximum allowed price is $2,500</p>
-            </div>
-
-            <div>
-              <label className="block text-gray-400 mb-2">Room Type</label>
-              <select
-                required
-                value={formData.roomType}
-                onChange={(e) => setFormData({...formData, roomType: e.target.value})}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
-              >
-                <option value="">Select Room Type</option>
-                <option value="single">Single</option>
-                <option value="double">Double</option>
-                <option value="suite">Suite</option>
-                <option value="deluxe">Deluxe</option>
-              </select>
+              {formData.roomType && (
+                <p className="text-sm text-amber-400 mt-1">
+                  Maximum allowed price for {roomTypeOptions.find(opt => opt.value === formData.roomType)?.label || ''} room is ${getCurrentMaxPrice()}
+                </p>
+              )}
             </div>
 
             <div>

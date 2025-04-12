@@ -7,37 +7,42 @@ const EditHotel = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Define room type options with their corresponding maximum prices
+  const roomTypeOptions = [
+    { value: 'single', label: 'Single', maxPrice: 750 },
+    { value: 'double', label: 'Double', maxPrice: 900 },
+    { value: 'suite', label: 'Suite', maxPrice: 1000 },
+    { value: 'deluxe', label: 'Deluxe', maxPrice: 1500 },
+    { value: 'family', label: 'Family Room', maxPrice: 1250 },
+    { value: 'executive', label: 'Executive', maxPrice: 1750 }
+  ];
+  
   const [formData, setFormData] = useState({
     name: '',
     location: '',
     availableRooms: '',
-    pricePerNight: '',
-    roomType: '',
-    facilities: [],
+    roomTypes: [],
+    roomPrices: {},
     contactNumber: '',
     status: 'available'
   });
 
-  // Add validation state
   const [validationErrors, setValidationErrors] = useState({
     contactNumber: ''
   });
 
-  // Add validation function
   const validateField = (name, value) => {
     if (name === 'contactNumber') {
       const phoneRegex = /^\d{10}$/;
-      return !phoneRegex.test(value) ? 
-        'Contact number must be exactly 10 digits' : '';
+      return !phoneRegex.test(value)
+        ? 'Contact number must be exactly 10 digits'
+        : '';
     }
     return '';
   };
 
   useEffect(() => {
-    if (!id) {
-      setError('No hotel ID provided');
-      return;
-    }
     fetchHotelData();
   }, [id]);
 
@@ -45,50 +50,101 @@ const EditHotel = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching hotel with ID:', id);
 
       const response = await axios.get(`http://localhost:5000/api/hotels/${id}`);
-      console.log('Received hotel data:', response.data);
 
-      if (!response.data) {
-        throw new Error('No hotel data received');
+      let roomTypes = [];
+      if (Array.isArray(response.data.roomTypes)) {
+        roomTypes = [...response.data.roomTypes];
+      } else if (response.data.roomType) {
+        roomTypes = [response.data.roomType];
       }
 
-      // Explicitly cast numeric values to strings for form inputs
-      setFormData({
+      let roomPrices = {};
+      if (response.data.roomPrices && typeof response.data.roomPrices === 'object') {
+        roomPrices = { ...response.data.roomPrices };
+      } else if (response.data.roomType && response.data.pricePerNight) {
+        roomPrices[response.data.roomType] = response.data.pricePerNight;
+      }
+
+      roomTypes.forEach(type => {
+        if (!roomPrices[type] || roomPrices[type] === '') {
+          roomPrices[type] = '100';
+        }
+      });
+
+      const formattedData = {
         name: response.data.name || '',
         location: response.data.location || '',
-        availableRooms: String(response.data.availableRooms || ''),
-        pricePerNight: String(response.data.pricePerNight || ''),
-        roomType: response.data.roomType || '',
-        facilities: response.data.facilities || [],
+        availableRooms: response.data.availableRooms?.toString() || '0',
+        roomTypes,
+        roomPrices,
         contactNumber: response.data.contactNumber || '',
         status: response.data.status || 'available'
-      });
+      };
+
+      setFormData(formattedData);
     } catch (error) {
-      console.error('Error details:', error.response || error);
-      setError(error.response?.data?.message || 'Failed to fetch hotel details');
+      setError(
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to fetch hotel details'
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRoomTypeChange = (e) => {
+    const value = e.target.value;
+    setFormData(prev => {
+      if (prev.roomTypes.includes(value)) {
+        const updatedRoomPrices = { ...prev.roomPrices };
+        delete updatedRoomPrices[value];
+        return {
+          ...prev,
+          roomTypes: prev.roomTypes.filter(type => type !== value),
+          roomPrices: updatedRoomPrices
+        };
+      } else {
+        // Set empty price when adding a new room type instead of default price
+        return {
+          ...prev,
+          roomTypes: [...prev.roomTypes, value],
+          roomPrices: {
+            ...prev.roomPrices,
+            [value]: ''
+          }
+        };
+      }
+    });
+  };
+
+  const handleRoomPriceChange = (roomType, price) => {
+    // Find the maximum price for this room type
+    const roomTypeOption = roomTypeOptions.find(opt => opt.value === roomType);
+    const maxPrice = roomTypeOption ? roomTypeOption.maxPrice : 750;
+    
+    // Ensure price doesn't exceed maximum
+    let validPrice = price;
+    if (parseFloat(price) > maxPrice) {
+      alert(`Price for ${roomTypeOption?.label || roomType} cannot exceed $${maxPrice}`);
+      validPrice = maxPrice.toString();
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      roomPrices: {
+        ...prev.roomPrices,
+        [roomType]: validPrice
+      }
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      // Add price validation
-      const pricePerNight = parseFloat(formData.pricePerNight);
-      if (pricePerNight > 2500) {
-        alert('Price per night cannot exceed $2,500');
-        return;
-      }
-
-      if (pricePerNight <= 0) {
-        alert('Price per night must be greater than 0');
-        return;
-      }
-
-      // Phone validation
       const phoneRegex = /^\d{10}$/;
       if (!phoneRegex.test(formData.contactNumber)) {
         setValidationErrors(prev => ({
@@ -98,30 +154,92 @@ const EditHotel = () => {
         return;
       }
 
-      // Input validation
-      if (!formData.name || !formData.location || !formData.roomType || !formData.contactNumber) {
+      if (formData.roomTypes.length === 0) {
+        alert('Please select at least one room type');
+        return;
+      }
+
+      if (!formData.name.trim() || !formData.location.trim()) {
         alert('Please fill in all required fields');
         return;
       }
 
-      // Data preparation
-      const updateData = {
-        ...formData,
+      if (parseInt(formData.availableRooms) < 0) {
+        alert('Available rooms cannot be negative');
+        return;
+      }
+
+      const validRoomPrices = {};
+      const missingPrices = [];
+      const exceedingMaxPrices = [];
+
+      formData.roomTypes.forEach((type) => {
+        const price = formData.roomPrices[type];
+        const roomTypeOption = roomTypeOptions.find(opt => opt.value === type);
+        const maxPrice = roomTypeOption ? roomTypeOption.maxPrice : 750;
+        
+        if (!price || isNaN(price) || parseFloat(price) <= 0) {
+          missingPrices.push(type);
+        } else if (parseFloat(price) > maxPrice) {
+          exceedingMaxPrices.push({type, maxPrice, currentPrice: parseFloat(price)});
+        } else {
+          validRoomPrices[type] = parseFloat(price);
+        }
+      });
+
+      if (missingPrices.length > 0) {
+        const missingLabels = roomTypeOptions
+          .filter(opt => missingPrices.includes(opt.value))
+          .map(opt => opt.label)
+          .join(', ');
+        alert(`Please set valid prices for these room types: ${missingLabels}`);
+        return;
+      }
+      
+      if (exceedingMaxPrices.length > 0) {
+        const errorMsg = exceedingMaxPrices.map(item => {
+          const roomType = roomTypeOptions.find(opt => opt.value === item.type);
+          return `${roomType?.label || item.type}: $${item.currentPrice} exceeds maximum of $${item.maxPrice}`;
+        }).join('\n');
+        
+        alert(`Some prices exceed maximum allowed values:\n${errorMsg}`);
+        return;
+      }
+
+      const submitData = {
+        name: formData.name.trim(),
+        location: formData.location.trim(),
         availableRooms: parseInt(formData.availableRooms) || 0,
-        pricePerNight: parseFloat(formData.pricePerNight) || 0,
+        roomTypes: formData.roomTypes,
+        roomPrices: validRoomPrices,
+        contactNumber: formData.contactNumber.trim(),
+        status: formData.status || 'available'
       };
 
-      console.log('Sending update data:', updateData);
-
-      const response = await axios.put(`http://localhost:5000/api/hotels/${id}`, updateData);
-      console.log('Update response:', response.data);
+      await axios.put(
+        `http://localhost:5000/api/hotels/${id}`,
+        submitData,
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 10000
+        }
+      );
 
       alert('Hotel updated successfully!');
       navigate('/employee-manager/hotels-list');
     } catch (error) {
-      console.error('Update error:', error.response || error);
-      alert(error.response?.data?.message || 'Failed to update hotel');
+      let errorMessage = 'Failed to update hotel. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      alert(errorMessage);
     }
+  };
+
+  // Helper function to get the maximum price for a specific room type
+  const getMaxPriceForRoomType = (roomType) => {
+    const roomTypeOption = roomTypeOptions.find(opt => opt.value === roomType);
+    return roomTypeOption ? roomTypeOption.maxPrice : 750;
   };
 
   if (loading) {
@@ -138,7 +256,13 @@ const EditHotel = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black p-6 pt-24">
         <div className="max-w-7xl mx-auto text-red-500 text-center">
-          {error}
+          <p className="text-xl mb-4">Error: {error}</p>
+          <button 
+            onClick={() => navigate('/employee-manager/hotels-list')}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+          >
+            Back to Hotel List
+          </button>
         </div>
       </div>
     );
@@ -182,57 +306,20 @@ const EditHotel = () => {
               <input
                 type="number"
                 required
-                value={formData.availableRooms}
-                onChange={(e) => setFormData({...formData, availableRooms: e.target.value})}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-400 mb-2">Price Per Night</label>
-              <input
-                type="number"
-                required
                 min="0"
-                max="2500"
-                step="0.01"
-                value={formData.pricePerNight}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  const numValue = parseFloat(value);
-                  if (value === '') {
-                    setFormData({...formData, pricePerNight: ''});
-                  } else if (numValue <= 2500) {
-                    setFormData({...formData, pricePerNight: value});
-                  }
-                }}
+                value={formData.availableRooms}
+                onChange={(e) => setFormData({...formData, availableRooms: Math.max(0, e.target.value)})}
                 className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
-                placeholder="Maximum price: $2,500"
               />
             </div>
 
             <div>
-              <label className="block text-gray-400 mb-2">Room Type</label>
-              <select
-                required
-                value={formData.roomType}
-                onChange={(e) => setFormData({...formData, roomType: e.target.value})}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
-              >
-                <option value="">Select Room Type</option>
-                <option value="single">Single</option>
-                <option value="double">Double</option>
-                <option value="suite">Suite</option>
-                <option value="deluxe">Deluxe</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-gray-400 mb-2">Contact Number</label>
+              <label className="block text-gray-400 mb-2">Hotel Contact No</label>
               <input
                 type="tel"
                 name="contactNumber"
                 required
+                pattern="\d{10}"
                 placeholder="Enter 10 digit contact number"
                 value={formData.contactNumber}
                 onChange={(e) => {
@@ -250,6 +337,63 @@ const EditHotel = () => {
                 <p className="mt-1 text-sm text-red-500">{validationErrors.contactNumber}</p>
               )}
             </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-gray-400 mb-2">Room Types (Select Multiple)</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {roomTypeOptions.map(option => (
+                  <div key={option.value} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`room-${option.value}`}
+                      value={option.value}
+                      checked={formData.roomTypes.includes(option.value)}
+                      onChange={handleRoomTypeChange}
+                      className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
+                    />
+                    <label htmlFor={`room-${option.value}`} className="ml-2 text-sm font-medium text-gray-300">
+                      {option.label} (Max: ${option.maxPrice})
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {formData.roomTypes.length === 0 && (
+                <p className="mt-1 text-sm text-red-500">Please select at least one room type</p>
+              )}
+            </div>
+
+            {/* Room Prices Section */}
+            {formData.roomTypes.length > 0 && (
+              <div className="md:col-span-2">
+                <label className="block text-gray-400 mb-4">Room Prices (per night)</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {formData.roomTypes.map(roomType => {
+                    const option = roomTypeOptions.find(opt => opt.value === roomType);
+                    const maxPrice = option?.maxPrice || 750;
+                    return (
+                      <div key={`price-${roomType}`} className="flex items-center">
+                        <label className="w-1/3 text-gray-300">{option?.label || roomType}:</label>
+                        <div className="w-2/3 relative">
+                          <span className="absolute left-3 top-3 text-gray-400">$</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max={maxPrice}
+                            required
+                            value={formData.roomPrices[roomType] || ''}
+                            onChange={(e) => handleRoomPriceChange(roomType, e.target.value)}
+                            className="w-full p-3 pl-8 rounded-lg bg-gray-700/50 text-white border border-gray-600"
+                          />
+                          <p className="text-xs text-amber-400 mt-1">
+                            Maximum: ${maxPrice}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="md:col-span-2 flex gap-4">
               <button

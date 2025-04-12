@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Shared/Navbar.jsx';
 import Footer from './components/Shared/Footer.jsx';
 
@@ -19,10 +20,10 @@ import AddEmployeeForm from './pages/AddEmployeeForm.jsx';
 import EmployeeList from './pages/EmployeeList.jsx';
 import HotelManagement from './pages/HotelManagement.jsx';
 import HotelList from './pages/HotelList.jsx';
-import EditHotel from './pages/EditHotel.jsx';
 import VehicleManagement from './pages/VehicleManagement.jsx';
 import VehicleList from './pages/VehicleList.jsx';
-import AddHotel from './pages/AddHotel';
+import AddHotel from './pages/AddHotel.jsx';
+import EditHotel from './pages/EditHotel.jsx';
 
 function App() {
   return (
@@ -54,6 +55,9 @@ function App() {
             <Route path="/employee-manager/vehicles-list" element={<VehicleList />} />
             <Route path="/employee-manager/edit-vehicle/:id" element={<VehicleManagement />} />
             <Route path="/employee-manager/add-hotel" element={<AddHotel />} />
+            
+            {/* Redirect edit hotel requests to hotel management page */}
+            <Route path="/employee-manager/edit-hotel/:id" element={<EditHotel />} />
           </Routes>
         </main>
         <Footer />

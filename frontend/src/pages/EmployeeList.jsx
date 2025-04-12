@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import jsPDF from 'jspdf';
 
+// Define role-based salary limits
+const SALARY_LIMITS = {
+  'Driver': 500,
+  'Travel Agent': 1200,
+  'Supplier': 450,
+  'Worker': 350
+};
+
 const EmployeeList = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +42,22 @@ const EmployeeList = () => {
         alert('Failed to delete employee');
       }
     }
+  };
+
+  // Helper function to get salary limit based on role
+  const getSalaryLimit = (role) => {
+    return SALARY_LIMITS[role] || 2500; // Default to global max if role not found
+  };
+
+  // Helper function to get salary color based on percentage of max
+  const getSalaryColorClass = (salary, role) => {
+    const maxSalary = getSalaryLimit(role);
+    const percentage = (salary / maxSalary) * 100;
+    
+    if (percentage >= 90) return 'text-red-400';
+    if (percentage >= 75) return 'text-amber-400';
+    if (percentage >= 50) return 'text-green-400';
+    return 'text-blue-400';
   };
 
   const generatePDF = () => {
@@ -69,7 +93,7 @@ const EmployeeList = () => {
       doc.text(`Phone: ${employee.phoneNumber}`, 30, yPos); yPos += 8;
       doc.text(`Email: ${employee.email}`, 30, yPos); yPos += 8;
       doc.text(`NIC: ${employee.nic}`, 30, yPos); yPos += 8;
-      doc.text(`Salary: ${employee.salary}`, 30, yPos); yPos += 15;
+      doc.text(`Salary: $${employee.salary} (Max: $${getSalaryLimit(employee.role)})`, 30, yPos); yPos += 15;
     });
 
     // Save PDF
@@ -137,6 +161,19 @@ const EmployeeList = () => {
                       <p className="text-gray-300">Role: {employee.role}</p>
                       <p className="text-gray-300">Phone: {employee.phoneNumber}</p>
                       <p className="text-gray-300">Email: {employee.email}</p>
+                      <div className="flex items-center gap-2">
+                        <p className={`font-semibold ${getSalaryColorClass(employee.salary, employee.role)}`}>
+                          Salary: ${employee.salary}
+                        </p>
+                        <span className="text-xs text-gray-400">
+                          (Max: ${getSalaryLimit(employee.role)})
+                        </span>
+                        {employee.salary >= getSalaryLimit(employee.role) * 0.9 && (
+                          <span className="bg-red-500/20 text-red-400 text-xs px-2 py-1 rounded-full">
+                            At Limit
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-4">
                       <button

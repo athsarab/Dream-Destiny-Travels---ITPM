@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const Employee = require('../models/Employee');
 
+// Define role-based salary limits
+const SALARY_LIMITS = {
+  'Driver': 500,
+  'Travel Agent': 1200,
+  'Supplier': 450,
+  'Worker': 350
+};
+
 // Debug middleware for tracking requests
 router.use((req, res, next) => {
     console.log(`Employee API Request: ${req.method} ${req.url}`);
@@ -56,7 +64,7 @@ router.get('/:id', async (req, res) => {
 // Add new employee
 router.post('/', async (req, res) => {
     try {
-        const { employeeId, phoneNumber, nic, email, salary } = req.body;
+        const { employeeId, phoneNumber, nic, email, salary, role } = req.body;
 
         // Check for duplicates
         const duplicateEmployee = await Employee.findOne({
@@ -80,8 +88,16 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // Salary validation
-        if (salary > 2500) {
+        // Role-based salary validation
+        if (role && SALARY_LIMITS[role]) {
+            const maxSalary = SALARY_LIMITS[role];
+            if (salary > maxSalary) {
+                return res.status(400).json({ 
+                    message: `Salary for ${role} cannot exceed $${maxSalary}` 
+                });
+            }
+        } else if (salary > 2500) {
+            // Global max if role doesn't have a specific limit
             return res.status(400).json({ 
                 message: 'Salary cannot exceed $2,500' 
             });
@@ -117,7 +133,7 @@ router.post('/', async (req, res) => {
 // Update employee
 router.put('/:id', async (req, res) => {
     try {
-        const { employeeId, phoneNumber, nic, email } = req.body;
+        const { employeeId, phoneNumber, nic, email, salary, role } = req.body;
 
         // Check for duplicates excluding current employee
         const duplicateEmployee = await Employee.findOne({
@@ -139,6 +155,27 @@ router.put('/:id', async (req, res) => {
 
             return res.status(400).json({
                 message: `${duplicateField} already exists. Please use a different ${duplicateField.toLowerCase()}.`
+            });
+        }
+
+        // Role-based salary validation
+        if (role && SALARY_LIMITS[role]) {
+            const maxSalary = SALARY_LIMITS[role];
+            if (salary > maxSalary) {
+                return res.status(400).json({ 
+                    message: `Salary for ${role} cannot exceed $${maxSalary}` 
+                });
+            }
+        } else if (salary > 2500) {
+            // Global max if role doesn't have a specific limit
+            return res.status(400).json({ 
+                message: 'Salary cannot exceed $2,500' 
+            });
+        }
+
+        if (salary <= 0) {
+            return res.status(400).json({ 
+                message: 'Salary must be greater than 0' 
             });
         }
 

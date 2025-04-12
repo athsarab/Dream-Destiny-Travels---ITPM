@@ -65,9 +65,21 @@ const HotelList = () => {
       doc.setFontSize(12);
       doc.text(`Name: ${hotel.name}`, 30, yPos); yPos += 8;
       doc.text(`Location: ${hotel.location}`, 30, yPos); yPos += 8;
-      doc.text(`Room Type: ${hotel.roomType}`, 30, yPos); yPos += 8;
       doc.text(`Available Rooms: ${hotel.availableRooms}`, 30, yPos); yPos += 8;
-      doc.text(`Price per Night: $${hotel.pricePerNight}`, 30, yPos); yPos += 8;
+      
+      // Room types and prices
+      doc.text('Room Types & Prices:', 30, yPos); yPos += 8;
+      if (hotel.roomTypes && hotel.roomPrices) {
+        hotel.roomTypes.forEach(type => {
+          doc.text(`  - ${type}: $${hotel.roomPrices[type] || 'N/A'}`, 40, yPos); 
+          yPos += 8;
+        });
+      } else if (hotel.roomType) {
+        // Fallback for legacy data
+        doc.text(`  - ${hotel.roomType}: $${hotel.pricePerNight || 'N/A'}`, 40, yPos);
+        yPos += 8;
+      }
+      
       doc.text(`Contact Number: ${hotel.contactNumber}`, 30, yPos); yPos += 8;
       doc.text(`Status: ${hotel.status}`, 30, yPos); yPos += 15;
     });
@@ -81,6 +93,32 @@ const HotelList = () => {
     hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     hotel.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // This function formats room prices for display
+  const formatRoomPrices = (hotel) => {
+    if (!hotel.roomPrices || Object.keys(hotel.roomPrices).length === 0) {
+      // Handle legacy data that might only have roomType/pricePerNight
+      if (hotel.roomType && hotel.pricePerNight) {
+        return (
+          <div className="space-y-1">
+            <div>{hotel.roomType}: ${hotel.pricePerNight}</div>
+          </div>
+        );
+      }
+      return 'No prices available';
+    }
+    
+    return (
+      <div className="space-y-1">
+        {hotel.roomTypes && hotel.roomTypes.map((type) => (
+          <div key={type} className="flex items-center">
+            <span className="capitalize">{type}:</span> 
+            <span className="ml-1 font-medium">${hotel.roomPrices[type] || 'N/A'}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black p-6 pt-24">
@@ -133,9 +171,11 @@ const HotelList = () => {
                       <h3 className="text-xl font-semibold text-white mb-2">{hotel.name}</h3>
                       <p className="text-gray-300">Location: {hotel.location}</p>
                       <p className="text-gray-300">Available Rooms: {hotel.availableRooms}</p>
-                      <p className="text-gray-300">Price per Night: ${hotel.pricePerNight}</p>
-                      <p className="text-gray-300">Room Type: {hotel.roomType}</p>
-                      <p className="text-gray-300">Contact: {hotel.contactNumber}</p>
+                      <div className="text-gray-300 mt-2">
+                        <p className="font-medium mb-1">Room Types & Prices:</p>
+                        {formatRoomPrices(hotel)}
+                      </div>
+                      <p className="text-gray-300 mt-2">Contact: {hotel.contactNumber}</p>
                     </div>
                     <div className="flex gap-4">
                       <button
