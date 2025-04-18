@@ -66,10 +66,13 @@ router.put('/bookings/:id', async (req, res) => {
             req.params.id,
             { status: req.body.status },
             { new: true }
-        );
+        ).populate('packageId');
+
         if (!booking) {
             return res.status(404).json({ message: 'Booking not found' });
         }
+
+        // Return full booking details in response
         res.json(booking);
     } catch (error) {
         res.status(400).json({ message: error.message });
