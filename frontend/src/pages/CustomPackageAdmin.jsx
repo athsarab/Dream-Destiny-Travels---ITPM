@@ -57,15 +57,71 @@ const CustomPackageAdmin = () => {
 
   // Handle booking status update
   const updateBookingStatus = async (id, newStatus) => {
-    try {
-      await api.updateCustomBooking(id, newStatus);
-      fetchData();
-      alert(`Booking ${newStatus} successfully!`);
-    } catch (err) {
-      console.error('Error updating status:', err);
-      alert('Failed to update status. Please try again.');
+    if (!id || !newStatus) {
+        alert('Invalid booking ID or status');
+        return;
     }
-  };
+
+    try {
+        setLoading(true);
+        const response = await api.updateCustomBooking(id, newStatus);
+        
+        if (response?.data?.success) {
+            const booking = response.data.data;
+            
+            if (newStatus === 'approved' && booking) {
+                // Format the selected options text
+                let selectedOptionsText = Object.entries(booking.selectedOptions || {})
+                    .map(([category, option]) => `${category}: ${option.name} ($${option.price})`)
+                    .join('\n');
+
+                // Format message with emojis
+                const message = `Dear ${booking.customerName},
+
+🎉 *Your Custom Package Booking has been Approved!*
+
+📅 *Booking Details:*
+• Travel Date: ${new Date(booking.travelDate).toLocaleDateString()}
+• Total Price: $${booking.totalPrice}
+
+🎯 *Selected Options:*
+${selectedOptionsText}
+
+Thank you for choosing Dream Destiny Travel! ✨
+
+Best regards,
+Dream Destiny Travel Team`;
+
+                // Clean and format phone number for WhatsApp
+                let phoneNumber = booking.phoneNumber.replace(/[^0-9]/g, '');
+                if (phoneNumber.startsWith('0')) {
+                    phoneNumber = '94' + phoneNumber.substring(1);
+                } else if (phoneNumber.startsWith('+94')) {
+                    phoneNumber = phoneNumber.substring(1);
+                } else if (!phoneNumber.startsWith('94')) {
+                    phoneNumber = '94' + phoneNumber;
+                }
+
+                // Create WhatsApp URL
+                const whatsappURL = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+                
+                // Open WhatsApp
+                window.open(whatsappURL, '_blank');
+            }
+
+            await fetchData();
+            alert(response.data.message || `Booking ${newStatus} successfully!`);
+        } else {
+            throw new Error('Failed to update booking status');
+        }
+    } catch (err) {
+        console.error('Error updating status:', err);
+        const errorMessage = err.response?.data?.message || err.message || 'Failed to update status';
+        alert(errorMessage);
+    } finally {
+        setLoading(false);
+    }
+};
 
   // Add delete booking function
   const deleteBooking = async (id) => {
