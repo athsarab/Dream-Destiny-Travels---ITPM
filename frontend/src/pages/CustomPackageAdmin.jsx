@@ -44,7 +44,7 @@ const CustomPackageAdmin = () => {
     }
   };
 
-  // Add automatic refresh interval
+  // Add automatic refresh interval 
   useEffect(() => {
     fetchData(); // Initial fetch
     
