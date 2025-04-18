@@ -109,10 +109,13 @@ const apiService = {
   createPackage: (data) => api.post('/api/packages', data),
   updatePackage: (id, data) => api.put(`/api/packages/${id}`, data),
   deletePackage: (id) => api.delete(`/api/packages/${id}`),
-  
+
   // Custom package methods
   getCustomBookings: () => api.get('/api/custom-packages/bookings'),
-  updateCustomBooking: (id, status) => api.put(`/api/custom-packages/bookings/${id}`, { status }),
+  updateCustomBooking: (id, status) => {
+    console.log('Sending update request:', { id, status });
+    return api.put(`/api/custom-packages/bookings/${id}`, { status: status });
+  },
   deleteCustomBooking: (id) => api.delete(`/api/custom-packages/bookings/${id}`),
 
   // Update package booking methods to use the api instance instead of axios directly
