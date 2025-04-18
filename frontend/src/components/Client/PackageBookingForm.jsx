@@ -77,14 +77,23 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
           </div>
           
           <div>
-            <label className="block text-white mb-2">Phone Number</label>
+            <label className="block text-white mb-2">Phone Number (with country code)</label>
             <input
               type="tel"
               required
+              placeholder="e.g., +94771234567"
               value={formData.phoneNumber}
-              onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+              onChange={(e) => {
+                  let value = e.target.value;
+                  // Ensure phone number starts with +
+                  if (!value.startsWith('+')) {
+                      value = '+' + value;
+                  }
+                  setFormData({...formData, phoneNumber: value})
+              }}
               className="w-full p-3 rounded-lg bg-dark-300 text-white"
             />
+            <small className="text-gray-400">Include country code (e.g., +94 for Sri Lanka)</small>
           </div>
           
           <div>
