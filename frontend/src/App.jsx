@@ -6,7 +6,6 @@ import Footer from './components/Shared/Footer.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import CustomPackageAdmin from './pages/CustomPackageAdmin.jsx';
 import EditPackagePage from './pages/EditPackagePage.jsx';
-import EmployeeManagement from './pages/EmployeeManagement.jsx';
 
 // Client Pages
 import HomePage from './pages/HomePage.jsx';
@@ -15,7 +14,7 @@ import CustomPackageCreate from './pages/CustomPackageCreate.jsx';
 
 // Employee Manager Pages
 import EmployeeManagerDashboard from './pages/EmployeeManagerDashboard.jsx';
-import AddEmployeeForm from './pages/AddEmployeeForm.jsx';
+import AddEmployeeForm from './pages/AddEmployeeForm.jsx'; 
 import EmployeeList from './pages/EmployeeList.jsx';
 import HotelManagement from './pages/HotelManagement.jsx';
 import HotelList from './pages/HotelList.jsx';
@@ -34,12 +33,13 @@ import Blog from './pages/Blog.jsx';
 function App() {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-black">
         <Navbar />
-        <main className="flex-1">
+        <main className="flex-1 relative z-10">
           <Routes>
             {/* Client Routes */}
             <Route path="/" element={<HomePage />} />
+            <Route path="/packages" element={<HomePage />} />
             <Route path="/package/:id" element={<PackagePage />} />
             <Route path="/custom-package" element={<CustomPackageCreate />} />
             
@@ -47,7 +47,6 @@ function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/custom-packages" element={<CustomPackageAdmin />} />
             <Route path="/admin/edit/:id" element={<EditPackagePage />} />
-            <Route path="/admin/resources" element={<EmployeeManagement />} />
 
             {/* Employee Manager Routes */}
             <Route path="/employee-manager" element={<EmployeeManagerDashboard />} />

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import api from '../services/api';
 
 const CustomPackageCreate = () => {
@@ -27,7 +26,7 @@ const CustomPackageCreate = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/custom-packages/categories');
+      const response = await api.axios.get('/api/custom-packages/categories');
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -97,8 +96,8 @@ const CustomPackageCreate = () => {
 
       console.log('Submitting booking:', bookingData);
 
-      const response = await axios.post(
-        'http://localhost:5000/api/custom-packages/bookings',
+      const response = await api.axios.post(
+        '/api/custom-packages/bookings',
         bookingData,
         {
           headers: {
