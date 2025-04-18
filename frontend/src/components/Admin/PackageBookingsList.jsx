@@ -35,7 +35,21 @@ const PackageBookingsList = () => {
 
     const handleStatusUpdate = async (bookingId, status) => {
         try {
-            await api.updatePackageBookingStatus(bookingId, status);
+            const response = await api.updatePackageBookingStatus(bookingId, status);
+            
+            if (status === 'approved' && response.data) {
+                // Create WhatsApp message
+                const booking = response.data;
+                const message = `Dear ${booking.customerName},\n\nYour booking has been approved!\n\nDetails:\nTravel Date: ${new Date(booking.travelDate).toLocaleDateString()}\nNumber of People: ${booking.numberOfPeople}\nTotal Price: $${booking.totalPrice}\n\nThank you for choosing Dream Destiny Travel!`;
+                
+                // Format phone number and generate WhatsApp link
+                const phoneNumber = booking.phoneNumber.replace(/[^0-9+]/g, '');
+                const whatsappLink = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+                
+                // Open WhatsApp in new window
+                window.open(whatsappLink, '_blank');
+            }
+            
             alert(`Booking ${status} successfully`);
             fetchBookings();
         } catch (error) {
