@@ -84,7 +84,7 @@ const CustomPackageAdmin = () => {
 • Travel Date: ${new Date(booking.travelDate).toLocaleDateString()}
 • Total Price: $${booking.totalPrice}
 
-🎯 *Selected Options:*
+🎯  *Selected Options:*
 ${selectedOptionsText}
 
 Thank you for choosing Dream Destiny Travel! ✨
