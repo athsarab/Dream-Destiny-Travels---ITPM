@@ -48,7 +48,7 @@ const CustomPackageCreate = () => {
           price: option.price
         };
       }
-      
+       
       return newOptions;
     });
   };
