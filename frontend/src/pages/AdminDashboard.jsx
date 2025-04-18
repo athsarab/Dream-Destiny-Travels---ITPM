@@ -59,6 +59,10 @@ const AdminDashboard = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this package? This action cannot be undone.')) {
+      return;
+    }
+
     try {
       await api.deletePackage(id);
       setPackages(packages.filter(pkg => pkg._id !== id));
