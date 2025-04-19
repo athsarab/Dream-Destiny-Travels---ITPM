@@ -24,15 +24,55 @@ const AddHotel = () => {
     contactNumber: '',
     status: 'available'
   });
+  
+  // Helper function to validate price against the selected room type's maximum price
+  const validatePrice = (price, roomType) => {
+    if (!roomType) return { valid: false, message: 'Please select a room type first' };
+    
+    const selectedRoomType = roomTypeOptions.find(option => option.value === roomType);
+    if (!selectedRoomType) return { valid: false, message: 'Invalid room type selected' };
+    
+    const maxPrice = selectedRoomType.maxPrice;
+    const priceValue = parseFloat(price);
+    
+    if (isNaN(priceValue)) return { valid: false, message: 'Please enter a valid price' };
+    if (priceValue <= 0) return { valid: false, message: 'Price must be greater than 0' };
+    if (priceValue > maxPrice) {
+      return { 
+        valid: false, 
+        message: `Price cannot exceed $${maxPrice} for ${selectedRoomType.label} room`,
+        maxPrice,
+        label: selectedRoomType.label
+      };
+    }
+    
+    return { valid: true, value: priceValue };
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // First validate the price
+      const priceValidation = validatePrice(formData.pricePerNight, formData.roomType);
+      
+      if (!priceValidation.valid) {
+        alert(priceValidation.message);
+        
+        // If price exceeds maximum, reset it to the maximum allowed
+        if (priceValidation.maxPrice) {
+          setFormData({
+            ...formData,
+            pricePerNight: priceValidation.maxPrice.toString()
+          });
+        }
+        return;
+      }
+      
       const cleanedData = {
         name: formData.name.trim(),
         location: formData.location.trim(),
         availableRooms: Math.max(0, parseInt(formData.availableRooms) || 0),
-        pricePerNight: Math.min(Math.max(0, parseFloat(formData.pricePerNight) || 0), 2500),
+        pricePerNight: priceValidation.value, // Use the validated price value
         roomType: formData.roomType,
         contactNumber: formData.contactNumber.trim(),
         status: 'available'
@@ -55,24 +95,9 @@ const AddHotel = () => {
         return;
       }
 
-      // Get the maximum price for the selected room type
-      const selectedRoomType = roomTypeOptions.find(option => option.value === cleanedData.roomType);
-      const maxPrice = selectedRoomType ? selectedRoomType.maxPrice : 750; // Default to lowest if not found
-      
-      // Price validation with room-specific maximum
-      if (parseFloat(cleanedData.pricePerNight) > maxPrice) {
-        alert(`Price per night for ${selectedRoomType.label} room cannot exceed $${maxPrice}`);
-        return;
-      }
-
-      if (cleanedData.pricePerNight <= 0) {
-        alert('Price per night must be greater than 0');
-        return;
-      }
-
       // Transform the data to match the expected structure in the backend
       const roomPrices = {};
-      roomPrices[cleanedData.roomType] = parseFloat(cleanedData.pricePerNight);
+      roomPrices[cleanedData.roomType] = cleanedData.pricePerNight;
       
       const apiData = {
         ...cleanedData,
@@ -97,6 +122,33 @@ const AddHotel = () => {
   const getCurrentMaxPrice = () => {
     const selectedType = roomTypeOptions.find(option => option.value === formData.roomType);
     return selectedType ? selectedType.maxPrice : 750;
+  };
+
+  // Handle price change with validation
+  const handlePriceChange = (e) => {
+    const value = e.target.value;
+    
+    if (value === '') {
+      setFormData({...formData, pricePerNight: ''});
+      return;
+    }
+    
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) {
+      return; // Don't update for non-number inputs
+    }
+    
+    const maxPrice = getCurrentMaxPrice();
+    
+    if (numValue < 0) {
+      alert('Price per night cannot be negative');
+      setFormData({...formData, pricePerNight: '0'});
+    } else if (numValue > maxPrice) {
+      alert(`Price per night cannot exceed $${maxPrice} for this room type`);
+      setFormData({...formData, pricePerNight: maxPrice.toString()});
+    } else {
+      setFormData({...formData, pricePerNight: value});
+    }
   };
 
   return (
@@ -170,25 +222,7 @@ const AddHotel = () => {
                 max={getCurrentMaxPrice()}
                 step="0.01"
                 value={formData.pricePerNight}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  const numValue = parseFloat(value);
-                  const maxPrice = getCurrentMaxPrice();
-                  
-                  if (value === '') {
-                    setFormData({...formData, pricePerNight: ''});
-                  } else if (!isNaN(numValue)) {
-                    if (numValue > maxPrice) {
-                      alert(`Price per night cannot exceed $${maxPrice} for this room type`);
-                      setFormData({...formData, pricePerNight: maxPrice.toString()});
-                    } else if (numValue < 0) {
-                      alert('Price per night cannot be negative');
-                      setFormData({...formData, pricePerNight: '0'});
-                    } else {
-                      setFormData({...formData, pricePerNight: value});
-                    }
-                  }
-                }}
+                onChange={handlePriceChange}
                 className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
                 placeholder={`Enter price (max: $${getCurrentMaxPrice()})`}
               />

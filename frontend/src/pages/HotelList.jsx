@@ -36,6 +36,7 @@ const HotelList = () => {
     }
   };
 
+  // Update PDF generation to include room quantities
   const generatePDF = () => {
     const doc = new jsPDF();
     let yPos = 20;
@@ -67,16 +68,16 @@ const HotelList = () => {
       doc.text(`Location: ${hotel.location}`, 30, yPos); yPos += 8;
       doc.text(`Available Rooms: ${hotel.availableRooms}`, 30, yPos); yPos += 8;
       
-      // Room types and prices
-      doc.text('Room Types & Prices:', 30, yPos); yPos += 8;
+      // Room types, prices, and quantities
+      doc.text('Room Types, Prices & Quantities:', 30, yPos); yPos += 8;
       if (hotel.roomTypes && hotel.roomPrices) {
         hotel.roomTypes.forEach(type => {
-          doc.text(`  - ${type}: $${hotel.roomPrices[type] || 'N/A'}`, 40, yPos); 
+          doc.text(`  - ${type}: $${hotel.roomPrices[type] || 'N/A'} (Quantity: ${hotel.roomQuantities?.[type] || 0})`, 40, yPos); 
           yPos += 8;
         });
       } else if (hotel.roomType) {
         // Fallback for legacy data
-        doc.text(`  - ${hotel.roomType}: $${hotel.pricePerNight || 'N/A'}`, 40, yPos);
+        doc.text(`  - ${hotel.roomType}: $${hotel.pricePerNight || 'N/A'} (Quantity: ${hotel.availableRooms || 0})`, 40, yPos);
         yPos += 8;
       }
       
@@ -94,26 +95,29 @@ const HotelList = () => {
     hotel.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // This function formats room prices for display
+  // This function formats room details for display
   const formatRoomPrices = (hotel) => {
     if (!hotel.roomPrices || Object.keys(hotel.roomPrices).length === 0) {
-      // Handle legacy data that might only have roomType/pricePerNight
+      // Handle legacy data
       if (hotel.roomType && hotel.pricePerNight) {
         return (
           <div className="space-y-1">
-            <div>{hotel.roomType}: ${hotel.pricePerNight}</div>
+            <div>{hotel.roomType}: ${hotel.pricePerNight} (Qty: {hotel.availableRooms || 0})</div>
           </div>
         );
       }
-      return 'No prices available';
+      return 'No details available';
     }
     
     return (
       <div className="space-y-1">
         {hotel.roomTypes && hotel.roomTypes.map((type) => (
-          <div key={type} className="flex items-center">
+          <div key={type} className="flex items-center justify-between">
             <span className="capitalize">{type}:</span> 
-            <span className="ml-1 font-medium">${hotel.roomPrices[type] || 'N/A'}</span>
+            <span>
+              <span className="font-medium">${hotel.roomPrices[type] || 'N/A'}</span>
+              <span className="ml-2 text-gray-400">(Qty: {hotel.roomQuantities?.[type] || 0})</span>
+            </span>
           </div>
         ))}
       </div>

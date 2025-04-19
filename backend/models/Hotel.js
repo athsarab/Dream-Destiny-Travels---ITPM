@@ -26,6 +26,19 @@ const hotelSchema = new mongoose.Schema({
             message: 'At least one room type must be selected'
         }
     },
+    roomQuantities: {
+        type: Map,
+        of: Number,
+        default: {},
+        validate: {
+            validator: function(v) {
+                // Ensure each room type has a quantity
+                if (!this.roomTypes) return false;
+                return this.roomTypes.every(type => v.get(type) >= 0);
+            },
+            message: 'Each room type must have a quantity specified'
+        }
+    },
     roomPrices: {
         type: Map,
         of: Number,

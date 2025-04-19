@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
         console.log('Received hotel data:', req.body);
 
         // 1. Validate required fields
-        const requiredFields = ['name', 'location', 'contactNumber', 'availableRooms', 'roomTypes', 'roomPrices'];
+        const requiredFields = ['name', 'location', 'contactNumber', 'roomTypes', 'roomPrices', 'roomQuantities'];
         const missingFields = requiredFields.filter(field => !req.body[field]);
         
         if (missingFields.length > 0) {
@@ -80,24 +80,31 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // 5. Check for excessive prices
-        const excessivePrices = Object.entries(roomPrices)
-            .filter(([_, price]) => parseFloat(price) > 2500)
-            .map(([type]) => type);
+        // 5. Room quantities validation - ensure every room type has a quantity
+        const roomQuantities = req.body.roomQuantities;
+        const missingQuantities = req.body.roomTypes.filter(type => 
+            !roomQuantities[type] || parseInt(roomQuantities[type]) < 0
+        );
         
-        if (excessivePrices.length > 0) {
+        if (missingQuantities.length > 0) {
             return res.status(400).json({
-                message: `Price cannot exceed $2,500 for room types: ${excessivePrices.join(', ')}`
+                message: `Missing or invalid quantities for room types: ${missingQuantities.join(', ')}`
             });
         }
+
+        // Calculate total available rooms
+        const totalRooms = Object.values(roomQuantities).reduce(
+            (sum, quantity) => sum + parseInt(quantity), 0
+        );
 
         // 6. Data type validation and conversion
         const hotelData = {
             name: req.body.name.trim(),
             location: req.body.location.trim(),
-            availableRooms: Math.max(0, parseInt(req.body.availableRooms)),
+            availableRooms: totalRooms,
             roomTypes: req.body.roomTypes,
             roomPrices: req.body.roomPrices, // Store as Map in MongoDB
+            roomQuantities: req.body.roomQuantities,
             contactNumber: req.body.contactNumber.trim(),
             status: 'available'
         };
@@ -150,16 +157,22 @@ router.put('/:id', async (req, res) => {
             });
         }
 
-        // Check for excessive prices
-        const excessivePrices = Object.entries(roomPrices)
-            .filter(([_, price]) => parseFloat(price) > 2500)
-            .map(([type]) => type);
+        // Room quantities validation
+        const roomQuantities = req.body.roomQuantities || {};
+        const missingQuantities = req.body.roomTypes.filter(type => 
+            roomQuantities[type] === undefined || parseInt(roomQuantities[type]) < 0
+        );
         
-        if (excessivePrices.length > 0) {
+        if (missingQuantities.length > 0) {
             return res.status(400).json({
-                message: `Price cannot exceed $2,500 for room types: ${excessivePrices.join(', ')}`
+                message: `Missing or invalid quantities for room types: ${missingQuantities.join(', ')}`
             });
         }
+
+        // Calculate total available rooms
+        const totalRooms = Object.values(roomQuantities).reduce(
+            (sum, quantity) => sum + parseInt(quantity), 0
+        );
 
         // Find the hotel first to apply an update that will pass validation
         const hotel = await Hotel.findById(id);
@@ -170,21 +183,25 @@ router.put('/:id', async (req, res) => {
         // First update the roomTypes which will be referenced by the validation
         hotel.roomTypes = req.body.roomTypes;
         
-        // Now create an object from the room prices
+        // Create objects for prices and quantities
         const pricesObject = {};
+        const quantitiesObject = {};
+        
         req.body.roomTypes.forEach(type => {
             if (roomPrices[type]) {
                 pricesObject[type] = parseFloat(roomPrices[type]);
             }
+            if (roomQuantities[type] !== undefined) {
+                quantitiesObject[type] = parseInt(roomQuantities[type]);
+            }
         });
         
-        // Manually set the roomPrices
+        // Update hotel fields
         hotel.roomPrices = pricesObject;
-        
-        // Update other fields
+        hotel.roomQuantities = quantitiesObject;
         hotel.name = req.body.name;
         hotel.location = req.body.location;
-        hotel.availableRooms = Math.max(0, parseInt(req.body.availableRooms) || 0);
+        hotel.availableRooms = totalRooms;
         hotel.contactNumber = req.body.contactNumber;
         hotel.status = req.body.status || 'available';
         

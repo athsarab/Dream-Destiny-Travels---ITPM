@@ -22,6 +22,7 @@ router.post('/', async (req, res) => {
         const vehicle = new Vehicle({
             vehicleId: req.body.vehicleId,
             type: req.body.type,
+            model: req.body.model, // Add model field
             seats: Number(req.body.seats),
             licenseInsuranceUpdated: new Date(req.body.licenseInsuranceUpdated),
             licenseInsuranceExpiry: new Date(req.body.licenseInsuranceExpiry),
@@ -70,10 +71,10 @@ router.get('/:id', async (req, res) => {
 // Update vehicle
 router.put('/:id', async (req, res) => {
     try {
-        const { vehicleId, type, seats, licenseInsuranceUpdated, licenseInsuranceExpiry, status, fuelType } = req.body;
+        const { vehicleId, type, model, seats, licenseInsuranceUpdated, licenseInsuranceExpiry, status, fuelType } = req.body;
 
         // Validate required fields
-        if (!vehicleId || !type || !seats) {
+        if (!vehicleId || !type || !model || !seats) {
             return res.status(400).json({ message: 'Required fields missing' });
         }
 
@@ -85,6 +86,7 @@ router.put('/:id', async (req, res) => {
         const updateData = {
             vehicleId,
             type,
+            model, // Add model field
             seats: Number(seats),
             licenseInsuranceUpdated: new Date(licenseInsuranceUpdated),
             licenseInsuranceExpiry: new Date(licenseInsuranceExpiry),

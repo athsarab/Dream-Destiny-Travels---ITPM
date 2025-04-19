@@ -6,20 +6,36 @@ const VehicleManagement = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Vehicle type and model mapping
+  const vehicleModels = {
+    car: ['Honda Fit', 'Suzuki Alto', 'Wagon R'],
+    van: ['Toyota Hiace', 'Suzuki Every'],
+    jeep: ['Toyota Prado', 'Pajero'],
+    'tuk-tuk': ['Bajaj RE', 'TVS King'],
+    motorcycle: ['Honda DIIO', 'Yamaha RayZR', 'Hero Pleasure']
+  };
+  
   const [formData, setFormData] = useState({
     vehicleId: '',
     type: '',
+    model: '',
     seats: '',
     licenseInsuranceUpdated: '',
     licenseInsuranceExpiry: '',
     status: 'available',
-    fuelType: ''  // Change default from 'petrol' to empty string
+    fuelType: ''
   });
 
   const [validationErrors, setValidationErrors] = useState({
     vehicleId: '',
+    type: '',
+    model: '',
     fuelType: ''
   });
+  
+  // Available models based on selected type
+  const [availableModels, setAvailableModels] = useState([]);
 
   useEffect(() => {
     if (id) {
@@ -27,20 +43,42 @@ const VehicleManagement = () => {
       fetchVehicleData();
     }
   }, [id]);
+  
+  // Update available models when vehicle type changes
+  useEffect(() => {
+    if (formData.type) {
+      setAvailableModels(vehicleModels[formData.type] || []);
+      // Reset model if changing to a type that doesn't include current model
+      if (!vehicleModels[formData.type]?.includes(formData.model)) {
+        setFormData(prev => ({...prev, model: ''}));
+      }
+    } else {
+      setAvailableModels([]);
+      setFormData(prev => ({...prev, model: ''}));
+    }
+  }, [formData.type]);
 
   const fetchVehicleData = async () => {
     try {
       const response = await axios.get(`http://localhost:5000/api/vehicles/${id}`);
       const vehicle = response.data;
+      
+      // Set form data with fetched vehicle
       setFormData({
         vehicleId: vehicle.vehicleId,
         type: vehicle.type,
+        model: vehicle.model,
         seats: vehicle.seats,
         licenseInsuranceUpdated: vehicle.licenseInsuranceUpdated.split('T')[0],
         licenseInsuranceExpiry: vehicle.licenseInsuranceExpiry.split('T')[0],
         status: vehicle.status,
         fuelType: vehicle.fuelType
       });
+      
+      // Ensure available models are set based on the type
+      if (vehicle.type) {
+        setAvailableModels(vehicleModels[vehicle.type] || []);
+      }
     } catch (error) {
       console.error('Error fetching vehicle:', error);
       alert('Failed to fetch vehicle details');
@@ -52,6 +90,7 @@ const VehicleManagement = () => {
     
     if (!formData.vehicleId) errors.vehicleId = 'Vehicle ID is required';
     if (!formData.type) errors.type = 'Vehicle type is required';
+    if (!formData.model) errors.model = 'Vehicle model is required';
     if (!formData.seats || formData.seats < 1) errors.seats = 'Valid number of seats is required';
     if (!formData.fuelType) errors.fuelType = 'Fuel type is required';
     if (!formData.licenseInsuranceUpdated) errors.licenseInsuranceUpdated = 'License update date is required';
@@ -73,6 +112,7 @@ const VehicleManagement = () => {
       const vehicleData = {
         vehicleId: formData.vehicleId,
         type: formData.type,
+        model: formData.model,
         seats: Number(formData.seats),
         licenseInsuranceUpdated: formData.licenseInsuranceUpdated,
         licenseInsuranceExpiry: formData.licenseInsuranceExpiry,
@@ -118,6 +158,9 @@ const VehicleManagement = () => {
                 onChange={(e) => setFormData({...formData, vehicleId: e.target.value})}
                 className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
               />
+              {validationErrors.vehicleId && (
+                <p className="mt-1 text-sm text-red-500">{validationErrors.vehicleId}</p>
+              )}
             </div>
 
             <div>
@@ -125,15 +168,51 @@ const VehicleManagement = () => {
               <select
                 required
                 value={formData.type}
-                onChange={(e) => setFormData({...formData, type: e.target.value})}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
+                onChange={(e) => {
+                  setFormData({...formData, type: e.target.value, model: ''});
+                  setValidationErrors(prev => ({...prev, type: '', model: ''}));
+                }}
+                className={`w-full p-3 rounded-lg bg-gray-700/50 text-white border ${
+                  validationErrors.type ? 'border-red-500' : 'border-gray-600'
+                }`}
               >
                 <option value="">Select Vehicle Type</option>
                 <option value="car">Car</option>
                 <option value="van">Van</option>
                 <option value="jeep">Jeep</option>
-                <option value="bus">Bus</option>
+                <option value="tuk-tuk">Tuk-Tuk</option>
+                <option value="motorcycle">Motorcycle</option>
               </select>
+              {validationErrors.type && (
+                <p className="mt-1 text-sm text-red-500">{validationErrors.type}</p>
+              )}
+            </div>
+            
+            <div>
+              <label className="block text-gray-400 mb-2">Vehicle Model</label>
+              <select
+                required
+                value={formData.model}
+                onChange={(e) => {
+                  setFormData({...formData, model: e.target.value});
+                  setValidationErrors(prev => ({...prev, model: ''}));
+                }}
+                disabled={!formData.type}
+                className={`w-full p-3 rounded-lg bg-gray-700/50 text-white border ${
+                  validationErrors.model ? 'border-red-500' : 'border-gray-600'
+                } ${!formData.type ? 'opacity-60 cursor-not-allowed' : ''}`}
+              >
+                <option value="">Select Vehicle Model</option>
+                {availableModels.map((model) => (
+                  <option key={model} value={model}>{model}</option>
+                ))}
+              </select>
+              {validationErrors.model && (
+                <p className="mt-1 text-sm text-red-500">{validationErrors.model}</p>
+              )}
+              {!formData.type && (
+                <p className="mt-1 text-sm text-amber-400">Please select a vehicle type first</p>
+              )}
             </div>
 
             <div>
@@ -188,7 +267,6 @@ const VehicleManagement = () => {
                 <option value="">Select Fuel Type</option>
                 <option value="petrol">Petrol</option>
                 <option value="diesel">Diesel</option>
-                <option value="electric">Electric</option>
                 <option value="hybrid">Hybrid</option>
               </select>
               {validationErrors.fuelType && (

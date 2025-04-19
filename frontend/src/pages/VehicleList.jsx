@@ -65,6 +65,7 @@ const VehicleList = () => {
       doc.setFontSize(12);
       doc.text(`Vehicle ID: ${vehicle.vehicleId}`, 30, yPos); yPos += 8;
       doc.text(`Type: ${vehicle.type}`, 30, yPos); yPos += 8;
+      doc.text(`Model: ${vehicle.model || 'Not specified'}`, 30, yPos); yPos += 8;
       doc.text(`Number of Seats: ${vehicle.seats}`, 30, yPos); yPos += 8;
       doc.text(`Fuel Type: ${vehicle.fuelType}`, 30, yPos); yPos += 8;
       doc.text(`License Updated: ${new Date(vehicle.licenseInsuranceUpdated).toLocaleDateString()}`, 30, yPos); yPos += 8;
@@ -79,7 +80,8 @@ const VehicleList = () => {
   // Add filtered vehicles logic
   const filteredVehicles = vehicles.filter(vehicle => 
     vehicle.vehicleId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehicle.type.toLowerCase().includes(searchTerm.toLowerCase())
+    vehicle.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (vehicle.model && vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Function to determine license status with conditional styling
@@ -126,7 +128,7 @@ const VehicleList = () => {
           <div className="mb-6">
             <input
               type="text"
-              placeholder="Search by vehicle ID or type..."
+              placeholder="Search by vehicle ID, type or model..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500"
@@ -145,6 +147,7 @@ const VehicleList = () => {
                     <div>
                       <h3 className="text-xl font-semibold text-white mb-2">ID: {vehicle.vehicleId}</h3>
                       <p className="text-gray-300">Type: {vehicle.type}</p>
+                      <p className="text-gray-300">Model: {vehicle.model || 'Not specified'}</p>
                       <p className="text-gray-300">Seats: {vehicle.seats}</p>
                       <p className="text-gray-300">Fuel Type: {vehicle.fuelType}</p>
                       <p className="text-gray-300">License Updated: {new Date(vehicle.licenseInsuranceUpdated).toLocaleDateString()}</p>

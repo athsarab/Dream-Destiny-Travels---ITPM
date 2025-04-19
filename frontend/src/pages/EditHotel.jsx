@@ -24,6 +24,7 @@ const EditHotel = () => {
     availableRooms: '',
     roomTypes: [],
     roomPrices: {},
+    roomQuantities: {},
     contactNumber: '',
     status: 'available'
   });
@@ -73,12 +74,23 @@ const EditHotel = () => {
         }
       });
 
+      let roomQuantities = {};
+      if (response.data.roomQuantities && typeof response.data.roomQuantities === 'object') {
+        roomQuantities = { ...response.data.roomQuantities };
+      } else {
+        // Default quantity of 0 for each room type if not specified
+        roomTypes.forEach(type => {
+          roomQuantities[type] = '0';
+        });
+      }
+
       const formattedData = {
         name: response.data.name || '',
         location: response.data.location || '',
         availableRooms: response.data.availableRooms?.toString() || '0',
         roomTypes,
         roomPrices,
+        roomQuantities,
         contactNumber: response.data.contactNumber || '',
         status: response.data.status || 'available'
       };
@@ -100,20 +112,26 @@ const EditHotel = () => {
     setFormData(prev => {
       if (prev.roomTypes.includes(value)) {
         const updatedRoomPrices = { ...prev.roomPrices };
+        const updatedRoomQuantities = { ...prev.roomQuantities };
         delete updatedRoomPrices[value];
+        delete updatedRoomQuantities[value];
         return {
           ...prev,
           roomTypes: prev.roomTypes.filter(type => type !== value),
-          roomPrices: updatedRoomPrices
+          roomPrices: updatedRoomPrices,
+          roomQuantities: updatedRoomQuantities
         };
       } else {
-        // Set empty price when adding a new room type instead of default price
         return {
           ...prev,
           roomTypes: [...prev.roomTypes, value],
           roomPrices: {
             ...prev.roomPrices,
             [value]: ''
+          },
+          roomQuantities: {
+            ...prev.roomQuantities,
+            [value]: '0'
           }
         };
       }
@@ -141,6 +159,22 @@ const EditHotel = () => {
     }));
   };
 
+  const handleRoomQuantityChange = (roomType, quantity) => {
+    // Ensure quantity is non-negative
+    let validQuantity = quantity;
+    if (parseInt(quantity) < 0) {
+      validQuantity = '0';
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      roomQuantities: {
+        ...prev.roomQuantities,
+        [roomType]: validQuantity
+      }
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -161,11 +195,6 @@ const EditHotel = () => {
 
       if (!formData.name.trim() || !formData.location.trim()) {
         alert('Please fill in all required fields');
-        return;
-      }
-
-      if (parseInt(formData.availableRooms) < 0) {
-        alert('Available rooms cannot be negative');
         return;
       }
 
@@ -206,12 +235,41 @@ const EditHotel = () => {
         return;
       }
 
+      // Validate room quantities
+      const validRoomQuantities = {};
+      const missingQuantities = [];
+
+      formData.roomTypes.forEach((type) => {
+        const quantity = formData.roomQuantities[type];
+        
+        if (quantity === undefined || quantity === '' || parseInt(quantity) < 0) {
+          missingQuantities.push(type);
+        } else {
+          validRoomQuantities[type] = parseInt(quantity);
+        }
+      });
+
+      if (missingQuantities.length > 0) {
+        const missingLabels = roomTypeOptions
+          .filter(opt => missingQuantities.includes(opt.value))
+          .map(opt => opt.label)
+          .join(', ');
+        alert(`Please set valid quantities for these room types: ${missingLabels}`);
+        return;
+      }
+
+      // Calculate total rooms
+      const totalRooms = Object.values(validRoomQuantities).reduce(
+        (sum, qty) => sum + parseInt(qty), 0
+      );
+
       const submitData = {
         name: formData.name.trim(),
         location: formData.location.trim(),
-        availableRooms: parseInt(formData.availableRooms) || 0,
+        availableRooms: totalRooms,
         roomTypes: formData.roomTypes,
         roomPrices: validRoomPrices,
+        roomQuantities: validRoomQuantities,
         contactNumber: formData.contactNumber.trim(),
         status: formData.status || 'available'
       };
@@ -362,31 +420,47 @@ const EditHotel = () => {
               )}
             </div>
 
-            {/* Room Prices Section */}
+            {/* Room Prices and Quantities Section */}
             {formData.roomTypes.length > 0 && (
               <div className="md:col-span-2">
-                <label className="block text-gray-400 mb-4">Room Prices (per night)</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="block text-gray-400 mb-4">Room Details</label>
+                <div className="grid grid-cols-1 gap-4">
                   {formData.roomTypes.map(roomType => {
                     const option = roomTypeOptions.find(opt => opt.value === roomType);
                     const maxPrice = option?.maxPrice || 750;
                     return (
-                      <div key={`price-${roomType}`} className="flex items-center">
-                        <label className="w-1/3 text-gray-300">{option?.label || roomType}:</label>
-                        <div className="w-2/3 relative">
-                          <span className="absolute left-3 top-3 text-gray-400">$</span>
-                          <input
-                            type="number"
-                            min="1"
-                            max={maxPrice}
-                            required
-                            value={formData.roomPrices[roomType] || ''}
-                            onChange={(e) => handleRoomPriceChange(roomType, e.target.value)}
-                            className="w-full p-3 pl-8 rounded-lg bg-gray-700/50 text-white border border-gray-600"
-                          />
-                          <p className="text-xs text-amber-400 mt-1">
-                            Maximum: ${maxPrice}
-                          </p>
+                      <div key={`room-details-${roomType}`} className="bg-gray-700/30 p-4 rounded-lg border border-gray-600">
+                        <h3 className="text-white font-medium mb-3">{option?.label || roomType}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-gray-400 mb-2">Price per Night</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-3 text-gray-400">$</span>
+                              <input
+                                type="number"
+                                min="1"
+                                max={maxPrice}
+                                required
+                                value={formData.roomPrices[roomType] || ''}
+                                onChange={(e) => handleRoomPriceChange(roomType, e.target.value)}
+                                className="w-full p-3 pl-8 rounded-lg bg-gray-700/50 text-white border border-gray-600"
+                              />
+                              <p className="text-xs text-amber-400 mt-1">
+                                Maximum: ${maxPrice}
+                              </p>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-gray-400 mb-2">Quantity Available</label>
+                            <input
+                              type="number"
+                              min="0"
+                              required
+                              value={formData.roomQuantities[roomType] || '0'}
+                              onChange={(e) => handleRoomQuantityChange(roomType, e.target.value)}
+                              className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
+                            />
+                          </div>
                         </div>
                       </div>
                     );
