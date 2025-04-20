@@ -54,10 +54,7 @@ function App() {
             <Route path="/employee-manager/vehicles" element={<VehicleManagement />} />
             <Route path="/employee-manager/vehicles-list" element={<VehicleList />} />
             <Route path="/employee-manager/edit-vehicle/:id" element={<VehicleManagement />} />
-            <Route path="/employee-manager/add-hotel" element={<AddHotel />} />
-            
-            {/* Redirect edit hotel requests to hotel management page */}
-            <Route path="/employee-manager/edit-hotel/:id" element={<EditHotel />} />
+            <Route path="/employee-manager/add-hotel" element={<HotelManagement />} />
           </Routes>
         </main>
         <Footer />

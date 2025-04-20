@@ -21,7 +21,6 @@ const EditHotel = () => {
   const [formData, setFormData] = useState({
     name: '',
     location: '',
-    availableRooms: '',
     roomTypes: [],
     roomPrices: {},
     roomQuantities: {},
@@ -266,7 +265,7 @@ const EditHotel = () => {
       const submitData = {
         name: formData.name.trim(),
         location: formData.location.trim(),
-        availableRooms: totalRooms,
+        availableRooms: totalRooms, // This is calculated as the sum of all room quantities
         roomTypes: formData.roomTypes,
         roomPrices: validRoomPrices,
         roomQuantities: validRoomQuantities,
@@ -292,12 +291,6 @@ const EditHotel = () => {
       }
       alert(errorMessage);
     }
-  };
-
-  // Helper function to get the maximum price for a specific room type
-  const getMaxPriceForRoomType = (roomType) => {
-    const roomTypeOption = roomTypeOptions.find(opt => opt.value === roomType);
-    return roomTypeOption ? roomTypeOption.maxPrice : 750;
   };
 
   if (loading) {
@@ -355,18 +348,6 @@ const EditHotel = () => {
                 required
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
-                className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-400 mb-2">Available Rooms</label>
-              <input
-                type="number"
-                required
-                min="0"
-                value={formData.availableRooms}
-                onChange={(e) => setFormData({...formData, availableRooms: Math.max(0, e.target.value)})}
                 className="w-full p-3 rounded-lg bg-gray-700/50 text-white border border-gray-600"
               />
             </div>
@@ -465,6 +446,21 @@ const EditHotel = () => {
                       </div>
                     );
                   })}
+                  
+                  {/* Summary section showing total rooms */}
+                  <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-600 mt-2">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-white font-medium">Total Available Rooms:</h3>
+                      <span className="text-lg font-bold text-white">
+                        {Object.values(formData.roomQuantities).reduce(
+                          (sum, qty) => sum + (parseInt(qty) || 0), 0
+                        )}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      This is calculated automatically as the sum of all room quantities
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

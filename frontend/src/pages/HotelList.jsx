@@ -36,69 +36,8 @@ const HotelList = () => {
     }
   };
 
-  // Update PDF generation to include room quantities
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    let yPos = 20;
-
-    // Add title
-    doc.setFontSize(18);
-    doc.text('Hotel Details Report', 20, yPos);
-    doc.setFontSize(12);
-    yPos += 20;
-
-    // Add date
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, yPos);
-    yPos += 20;
-
-    // Add hotel details
-    hotels.forEach((hotel, index) => {
-      // Add new page if needed
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
-
-      doc.setFontSize(14);
-      doc.text(`Hotel ${index + 1}:`, 20, yPos);
-      yPos += 10;
-
-      doc.setFontSize(12);
-      doc.text(`Name: ${hotel.name}`, 30, yPos); yPos += 8;
-      doc.text(`Location: ${hotel.location}`, 30, yPos); yPos += 8;
-      doc.text(`Available Rooms: ${hotel.availableRooms}`, 30, yPos); yPos += 8;
-      
-      // Room types, prices, and quantities
-      doc.text('Room Types, Prices & Quantities:', 30, yPos); yPos += 8;
-      if (hotel.roomTypes && hotel.roomPrices) {
-        hotel.roomTypes.forEach(type => {
-          doc.text(`  - ${type}: $${hotel.roomPrices[type] || 'N/A'} (Quantity: ${hotel.roomQuantities?.[type] || 0})`, 40, yPos); 
-          yPos += 8;
-        });
-      } else if (hotel.roomType) {
-        // Fallback for legacy data
-        doc.text(`  - ${hotel.roomType}: $${hotel.pricePerNight || 'N/A'} (Quantity: ${hotel.availableRooms || 0})`, 40, yPos);
-        yPos += 8;
-      }
-      
-      doc.text(`Contact Number: ${hotel.contactNumber}`, 30, yPos); yPos += 8;
-      doc.text(`Status: ${hotel.status}`, 30, yPos); yPos += 15;
-    });
-
-    // Save PDF
-    doc.save('hotel-details.pdf');
-  };
-
-  // Add filtered hotels logic
-  const filteredHotels = hotels.filter(hotel => 
-    hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    hotel.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // This function formats room details for display
-  const formatRoomPrices = (hotel) => {
+  const formatRoomDetails = (hotel) => {
     if (!hotel.roomPrices || Object.keys(hotel.roomPrices).length === 0) {
-      // Handle legacy data
       if (hotel.roomType && hotel.pricePerNight) {
         return (
           <div className="space-y-1">
@@ -110,19 +49,103 @@ const HotelList = () => {
     }
     
     return (
-      <div className="space-y-1">
-        {hotel.roomTypes && hotel.roomTypes.map((type) => (
-          <div key={type} className="flex items-center justify-between">
-            <span className="capitalize">{type}:</span> 
-            <span>
-              <span className="font-medium">${hotel.roomPrices[type] || 'N/A'}</span>
-              <span className="ml-2 text-gray-400">(Qty: {hotel.roomQuantities?.[type] || 0})</span>
-            </span>
-          </div>
-        ))}
+      <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+          {hotel.roomTypes && hotel.roomTypes.map((type) => {
+            const formattedType = type.charAt(0).toUpperCase() + type.slice(1);
+            let quantity = 0;
+            if (hotel.roomQuantities && hotel.roomQuantities[type]) {
+              quantity = hotel.roomQuantities[type];
+            }
+            
+            return (
+              <div key={type} className="bg-gray-700/30 p-2 rounded border border-gray-600">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-white">{formattedType}</span>
+                  <span className="text-gray-300">${hotel.roomPrices[type] || 'N/A'}</span>
+                </div>
+                <div className="text-sm text-gray-400">
+                  Quantity: {quantity} rooms
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-2 text-right">
+          <span className="bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded text-sm">
+            Total Rooms: {hotel.availableRooms}
+          </span>
+        </div>
       </div>
     );
   };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    let yPos = 20;
+
+    doc.setFontSize(18);
+    doc.text('Hotel Details Report', 20, yPos);
+    doc.setFontSize(12);
+    yPos += 20;
+
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, yPos);
+    yPos += 20;
+
+    hotels.forEach((hotel, index) => {
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text(`Hotel ${index + 1}: ${hotel.name}`, 20, yPos);
+      yPos += 10;
+
+      doc.setFontSize(12);
+      doc.text(`Location: ${hotel.location}`, 30, yPos); yPos += 8;
+      doc.text(`Contact Number: ${hotel.contactNumber}`, 30, yPos); yPos += 8;
+      doc.text(`Total Available Rooms: ${hotel.availableRooms}`, 30, yPos); yPos += 12;
+      
+      doc.text('Room Details:', 30, yPos); yPos += 8;
+      
+      if (hotel.roomTypes && hotel.roomPrices) {
+        doc.setFillColor(240, 240, 240);
+        doc.rect(30, yPos - 5, 150, 10, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Room Type', 35, yPos);
+        doc.text('Price per Night', 85, yPos);
+        doc.text('Quantity', 140, yPos);
+        doc.setTextColor(0, 0, 0);
+        yPos += 8;
+        
+        hotel.roomTypes.forEach(type => {
+          const formattedType = type.charAt(0).toUpperCase() + type.slice(1);
+          let quantity = 0;
+          if (hotel.roomQuantities && hotel.roomQuantities[type]) {
+            quantity = hotel.roomQuantities[type];
+          }
+          
+          doc.text(formattedType, 35, yPos);
+          doc.text(`$${hotel.roomPrices[type] || 'N/A'}`, 85, yPos);
+          doc.text(`${quantity}`, 140, yPos);
+          yPos += 8;
+        });
+      } else if (hotel.roomType) {
+        doc.text(`${hotel.roomType}: $${hotel.pricePerNight || 'N/A'} (Quantity: ${hotel.availableRooms || 0})`, 40, yPos);
+        yPos += 8;
+      }
+      
+      doc.text(`Status: ${hotel.status}`, 30, yPos); yPos += 15;
+    });
+
+    doc.save('hotel-details.pdf');
+  };
+
+  const filteredHotels = hotels.filter(hotel => 
+    hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    hotel.location.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black p-6 pt-24">
@@ -151,7 +174,6 @@ const HotelList = () => {
             </div>
           </div>
 
-          {/* Add Search Bar */}
           <div className="mb-6">
             <input
               type="text"
@@ -171,17 +193,18 @@ const HotelList = () => {
               filteredHotels.map(hotel => (
                 <div key={hotel._id} className="bg-gray-700/30 rounded-lg p-6 border border-gray-600">
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="w-full">
                       <h3 className="text-xl font-semibold text-white mb-2">{hotel.name}</h3>
-                      <p className="text-gray-300">Location: {hotel.location}</p>
-                      <p className="text-gray-300">Available Rooms: {hotel.availableRooms}</p>
-                      <div className="text-gray-300 mt-2">
-                        <p className="font-medium mb-1">Room Types & Prices:</p>
-                        {formatRoomPrices(hotel)}
+                      <div className="flex justify-between mb-4">
+                        <p className="text-gray-300">Location: {hotel.location}</p>
+                        <p className="text-gray-300">Contact: {hotel.contactNumber}</p>
                       </div>
-                      <p className="text-gray-300 mt-2">Contact: {hotel.contactNumber}</p>
+                      <div className="bg-gray-800/50 rounded-lg p-4 mb-3">
+                        <p className="font-medium text-white mb-2">Room Details:</p>
+                        {formatRoomDetails(hotel)}
+                      </div>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 ml-4">
                       <button
                         onClick={() => navigate(`/employee-manager/edit-hotel/${hotel._id}`)}
                         className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
