@@ -5,22 +5,42 @@ import jsPDF from 'jspdf';
 
 const VehicleList = () => {
   const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchVehicles();
+    fetchDrivers();
   }, []);
 
   const fetchVehicles = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/vehicles');
+      console.log('Fetched vehicles data:', response.data);
       setVehicles(response.data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
       setLoading(false);
+    }
+  };
+
+  const fetchDrivers = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/employees?role=driver');
+      const driverMap = {};
+      response.data.forEach(driver => {
+        driverMap[driver._id] = {
+          name: driver.name,
+          contactNumber: driver.contactNumber || 'No contact provided',
+          email: driver.email || 'No email provided'
+        };
+      });
+      setDrivers(driverMap);
+    } catch (error) {
+      console.error('Error fetching drivers:', error);
     }
   };
 
@@ -70,6 +90,16 @@ const VehicleList = () => {
       doc.text(`Fuel Type: ${vehicle.fuelType}`, 30, yPos); yPos += 8;
       doc.text(`License Updated: ${new Date(vehicle.licenseInsuranceUpdated).toLocaleDateString()}`, 30, yPos); yPos += 8;
       doc.text(`License Expiry: ${new Date(vehicle.licenseInsuranceExpiry).toLocaleDateString()}`, 30, yPos); yPos += 8;
+      
+      // Add assigned driver information
+      if (vehicle.assignedDriver && drivers[vehicle.assignedDriver]) {
+        const driver = drivers[vehicle.assignedDriver];
+        doc.text(`Assigned Driver: ${driver.name}`, 30, yPos); yPos += 8;
+        doc.text(`Driver Contact: ${driver.contactNumber}`, 40, yPos); yPos += 8;
+      } else {
+        doc.text('Assigned Driver: Not assigned', 30, yPos); yPos += 8;
+      }
+      
       doc.text(`Status: ${vehicle.status}`, 30, yPos); yPos += 15;
     });
 
@@ -98,6 +128,24 @@ const VehicleList = () => {
         return <span>| {daysRemaining} Days left</span>;
       }
       
+  };
+
+  // Get driver details - handles both populated driver objects and driver IDs
+  const getDriverInfo = (vehicle) => {
+    if (!vehicle.assignedDriver) return null;
+    
+    // If driver data is already populated (returned as an object from backend)
+    if (typeof vehicle.assignedDriver === 'object') {
+      return {
+        name: vehicle.assignedDriver.name,
+        contactNumber: vehicle.assignedDriver.contactNumber || 'No contact provided',
+        email: vehicle.assignedDriver.email || 'No email provided'
+      };
+    }
+    
+    // If driver is just an ID, look it up in our drivers map
+    const driverId = vehicle.assignedDriver;
+    return drivers[driverId] || null;
   };
 
   return (
@@ -141,36 +189,59 @@ const VehicleList = () => {
             ) : filteredVehicles.length === 0 ? (
               <p className="text-white text-center">No vehicles found</p>
             ) : (
-              filteredVehicles.map(vehicle => (
-                <div key={vehicle._id} className="bg-gray-700/30 rounded-lg p-6 border border-gray-600">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-xl font-semibold text-white mb-2">ID: {vehicle.vehicleId}</h3>
-                      <p className="text-gray-300">Type: {vehicle.type}</p>
-                      <p className="text-gray-300">Model: {vehicle.model || 'Not specified'}</p>
-                      <p className="text-gray-300">Seats: {vehicle.seats}</p>
-                      <p className="text-gray-300">Fuel Type: {vehicle.fuelType}</p>
-                      <p className="text-gray-300">License Updated: {new Date(vehicle.licenseInsuranceUpdated).toLocaleDateString()}</p>
-                      <p className="text-gray-300">License Expiry: {new Date(vehicle.licenseInsuranceExpiry).toLocaleDateString()} {getLicenseStatus(vehicle.licenseInsuranceExpiry)}</p>
-                      <p className="text-gray-300">Status: {vehicle.status}</p>
-                    </div>
-                    <div className="flex gap-4">
-                      <button
-                        onClick={() => navigate(`/employee-manager/edit-vehicle/${vehicle._id}`)}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(vehicle._id)}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
+              filteredVehicles.map(vehicle => {
+                const driverInfo = getDriverInfo(vehicle);
+                
+                return (
+                  <div key={vehicle._id} className="bg-gray-700/30 rounded-lg p-6 border border-gray-600">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-xl font-semibold text-white mb-2">ID: {vehicle.vehicleId}</h3>
+                        <p className="text-gray-300">Type: {vehicle.type}</p>
+                        <p className="text-gray-300">Model: {vehicle.model || 'Not specified'}</p>
+                        <p className="text-gray-300">Seats: {vehicle.seats}</p>
+                        <p className="text-gray-300">Fuel Type: {vehicle.fuelType}</p>
+                        <p className="text-gray-300">License Updated: {new Date(vehicle.licenseInsuranceUpdated).toLocaleDateString()}</p>
+                        <p className="text-gray-300">License Expiry: {new Date(vehicle.licenseInsuranceExpiry).toLocaleDateString()} {getLicenseStatus(vehicle.licenseInsuranceExpiry)}</p>
+                        
+                        {/* Display assigned driver */}
+                        {driverInfo ? (
+                          <div className="mt-2 mb-2 bg-gray-800/70 p-3 rounded-lg border border-indigo-900/50">
+                            <p className="text-indigo-300 font-medium">Assigned Driver:</p>
+                            <p className="text-white">{driverInfo.name}</p>
+                            <p className="text-gray-400">
+                              <i className="fas fa-phone-alt mr-2"></i>
+                              {driverInfo.contactNumber}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-gray-300 mt-2 mb-2">
+                            <span className="bg-red-500/20 text-red-300 px-2 py-1 rounded">
+                              No Driver Assigned
+                            </span>
+                          </p>
+                        )}
+                        
+                        <p className="text-gray-300">Status: {vehicle.status}</p>
+                      </div>
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => navigate(`/employee-manager/edit-vehicle/${vehicle._id}`)}
+                          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(vehicle._id)}
+                          className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

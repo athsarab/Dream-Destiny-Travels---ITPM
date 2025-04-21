@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 // Get all vehicles
 router.get('/', async (req, res) => {
     try {
-        const vehicles = await Vehicle.find().sort('-createdAt');
+        const vehicles = await Vehicle.find().sort('-createdAt').populate('assignedDriver', 'name contactNumber email');
         res.json(vehicles);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching vehicles', error: error.message });
@@ -22,12 +22,13 @@ router.post('/', async (req, res) => {
         const vehicle = new Vehicle({
             vehicleId: req.body.vehicleId,
             type: req.body.type,
-            model: req.body.model, // Add model field
+            model: req.body.model,
             seats: Number(req.body.seats),
             licenseInsuranceUpdated: new Date(req.body.licenseInsuranceUpdated),
             licenseInsuranceExpiry: new Date(req.body.licenseInsuranceExpiry),
             fuelType: req.body.fuelType,
-            status: 'available'
+            status: 'available',
+            assignedDriver: req.body.assignedDriver || null
         });
 
         // Basic validation
@@ -58,7 +59,7 @@ router.post('/', async (req, res) => {
 // Get single vehicle
 router.get('/:id', async (req, res) => {
     try {
-        const vehicle = await Vehicle.findById(req.params.id);
+        const vehicle = await Vehicle.findById(req.params.id).populate('assignedDriver', 'name contactNumber email');
         if (!vehicle) {
             return res.status(404).json({ message: 'Vehicle not found' });
         }
@@ -71,7 +72,7 @@ router.get('/:id', async (req, res) => {
 // Update vehicle
 router.put('/:id', async (req, res) => {
     try {
-        const { vehicleId, type, model, seats, licenseInsuranceUpdated, licenseInsuranceExpiry, status, fuelType } = req.body;
+        const { vehicleId, type, model, seats, licenseInsuranceUpdated, licenseInsuranceExpiry, status, fuelType, assignedDriver } = req.body;
 
         // Validate required fields
         if (!vehicleId || !type || !model || !seats) {
@@ -86,12 +87,13 @@ router.put('/:id', async (req, res) => {
         const updateData = {
             vehicleId,
             type,
-            model, // Add model field
+            model,
             seats: Number(seats),
             licenseInsuranceUpdated: new Date(licenseInsuranceUpdated),
             licenseInsuranceExpiry: new Date(licenseInsuranceExpiry),
             fuelType,
-            status: status || 'available'
+            status: status || 'available',
+            assignedDriver: assignedDriver || null
         };
 
         const vehicle = await Vehicle.findByIdAndUpdate(

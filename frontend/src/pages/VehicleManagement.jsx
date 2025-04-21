@@ -6,6 +6,7 @@ const VehicleManagement = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  const [drivers, setDrivers] = useState([]);
   
   // Vehicle type and model mapping
   const vehicleModels = {
@@ -24,7 +25,8 @@ const VehicleManagement = () => {
     licenseInsuranceUpdated: '',
     licenseInsuranceExpiry: '',
     status: 'available',
-    fuelType: ''
+    fuelType: '',
+    assignedDriver: ''
   });
 
   const [validationErrors, setValidationErrors] = useState({
@@ -42,6 +44,7 @@ const VehicleManagement = () => {
       setIsEditing(true);
       fetchVehicleData();
     }
+    fetchDrivers();
   }, [id]);
   
   // Update available models when vehicle type changes
@@ -62,6 +65,7 @@ const VehicleManagement = () => {
     try {
       const response = await axios.get(`http://localhost:5000/api/vehicles/${id}`);
       const vehicle = response.data;
+      console.log('Fetched vehicle for editing:', vehicle);
       
       // Set form data with fetched vehicle
       setFormData({
@@ -72,7 +76,11 @@ const VehicleManagement = () => {
         licenseInsuranceUpdated: vehicle.licenseInsuranceUpdated.split('T')[0],
         licenseInsuranceExpiry: vehicle.licenseInsuranceExpiry.split('T')[0],
         status: vehicle.status,
-        fuelType: vehicle.fuelType
+        fuelType: vehicle.fuelType,
+        // Handle both string ID and object with _id property
+        assignedDriver: vehicle.assignedDriver ? 
+          (typeof vehicle.assignedDriver === 'object' ? vehicle.assignedDriver._id : vehicle.assignedDriver) 
+          : ''
       });
       
       // Ensure available models are set based on the type
@@ -82,6 +90,19 @@ const VehicleManagement = () => {
     } catch (error) {
       console.error('Error fetching vehicle:', error);
       alert('Failed to fetch vehicle details');
+    }
+  };
+
+  const fetchDrivers = async () => {
+    try {
+      // Fetch drivers from employee API who have a role of driver
+      const response = await axios.get('http://localhost:5000/api/employees?role=driver');
+      setDrivers(response.data.map(driver => ({
+        ...driver,
+        displayName: `${driver.name} (${driver.contactNumber || 'No contact'})`
+      })));
+    } catch (error) {
+      console.error('Error fetching drivers:', error);
     }
   };
 
@@ -117,7 +138,8 @@ const VehicleManagement = () => {
         licenseInsuranceUpdated: formData.licenseInsuranceUpdated,
         licenseInsuranceExpiry: formData.licenseInsuranceExpiry,
         fuelType: formData.fuelType,
-        status: formData.status || 'available'
+        status: formData.status || 'available',
+        assignedDriver: formData.assignedDriver || null
       };
 
       let response;
@@ -271,6 +293,49 @@ const VehicleManagement = () => {
               </select>
               {validationErrors.fuelType && (
                 <p className="mt-1 text-sm text-red-500">{validationErrors.fuelType}</p>
+              )}
+            </div>
+
+            {/* Driver Assignment Field - Enhanced styling */}
+            <div className="md:col-span-2 bg-gray-700/20 p-4 rounded-lg border border-indigo-500/20">
+              <label className="block text-indigo-300 font-semibold mb-3">Assign Driver to Vehicle</label>
+              <select
+                value={formData.assignedDriver}
+                onChange={(e) => setFormData({...formData, assignedDriver: e.target.value})}
+                className="w-full p-3 rounded-lg bg-gray-700/70 text-white border border-indigo-500/30 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">-- Select a driver --</option>
+                {drivers.map(driver => (
+                  <option key={driver._id} value={driver._id}>
+                    {driver.name} • {driver.contactNumber || 'No phone number'}
+                  </option>
+                ))}
+              </select>
+              
+              {/* Show selected driver details if a driver is selected */}
+              {formData.assignedDriver && (
+                <div className="mt-3 p-3 bg-indigo-900/20 rounded-lg border border-indigo-500/30">
+                  <p className="text-sm text-gray-300">
+                    Selected driver: 
+                    <span className="font-medium text-white ml-2">
+                      {drivers.find(d => d._id === formData.assignedDriver)?.name || 'Loading...'}
+                    </span>
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    Contact: 
+                    <span className="text-indigo-300 ml-2">
+                      {drivers.find(d => d._id === formData.assignedDriver)?.contactNumber || 'No contact number'}
+                    </span>
+                  </p>
+                  {drivers.find(d => d._id === formData.assignedDriver)?.email && (
+                    <p className="text-sm text-gray-400">
+                      Email: 
+                      <span className="text-indigo-300 ml-2">
+                        {drivers.find(d => d._id === formData.assignedDriver)?.email}
+                      </span>
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 

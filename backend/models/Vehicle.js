@@ -42,6 +42,11 @@ const vehicleSchema = new mongoose.Schema({
     type: String,
     enum: ['available', 'reserved', 'maintenance'],
     default: 'available'
+  },
+  assignedDriver: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Employee',
+    default: null
   }
 }, {
   timestamps: true 
