@@ -65,7 +65,12 @@ const VehicleManagement = () => {
     try {
       const response = await axios.get(`http://localhost:5000/api/vehicles/${id}`);
       const vehicle = response.data;
-      console.log('Fetched vehicle for editing:', vehicle);
+      console.log('Fetched vehicle data for editing:', vehicle);
+      
+      // Check driver information
+      if (vehicle.assignedDriver) {
+        console.log('Driver assigned to this vehicle:', vehicle.assignedDriver);
+      }
       
       // Set form data with fetched vehicle
       setFormData({
@@ -77,7 +82,7 @@ const VehicleManagement = () => {
         licenseInsuranceExpiry: vehicle.licenseInsuranceExpiry.split('T')[0],
         status: vehicle.status,
         fuelType: vehicle.fuelType,
-        // Handle both string ID and object with _id property
+        // Handle both object and string driver IDs
         assignedDriver: vehicle.assignedDriver ? 
           (typeof vehicle.assignedDriver === 'object' ? vehicle.assignedDriver._id : vehicle.assignedDriver) 
           : ''
@@ -97,10 +102,15 @@ const VehicleManagement = () => {
     try {
       // Fetch drivers from employee API who have a role of driver
       const response = await axios.get('http://localhost:5000/api/employees?role=driver');
-      setDrivers(response.data.map(driver => ({
-        ...driver,
-        displayName: `${driver.name} (${driver.contactNumber || 'No contact'})`
-      })));
+      console.log('Available drivers for assignment:', response.data);
+      
+      // Debug driver data to see what fields are available
+      if (response.data && response.data.length > 0) {
+        console.log('Sample driver data:', response.data[0]);
+      }
+      
+      // Store full driver info including phone numbers
+      setDrivers(response.data);
     } catch (error) {
       console.error('Error fetching drivers:', error);
     }
@@ -296,7 +306,7 @@ const VehicleManagement = () => {
               )}
             </div>
 
-            {/* Driver Assignment Field - Enhanced styling */}
+            {/* Enhanced Driver Assignment Field with better display */}
             <div className="md:col-span-2 bg-gray-700/20 p-4 rounded-lg border border-indigo-500/20">
               <label className="block text-indigo-300 font-semibold mb-3">Assign Driver to Vehicle</label>
               <select
@@ -307,34 +317,53 @@ const VehicleManagement = () => {
                 <option value="">-- Select a driver --</option>
                 {drivers.map(driver => (
                   <option key={driver._id} value={driver._id}>
-                    {driver.name} • {driver.contactNumber || 'No phone number'}
+                    {driver.name} - {driver.phoneNumber || 'No phone number'}
                   </option>
                 ))}
               </select>
               
-              {/* Show selected driver details if a driver is selected */}
+              {/* Display selected driver details with highlighted phone number */}
               {formData.assignedDriver && (
                 <div className="mt-3 p-3 bg-indigo-900/20 rounded-lg border border-indigo-500/30">
-                  <p className="text-sm text-gray-300">
-                    Selected driver: 
-                    <span className="font-medium text-white ml-2">
-                      {drivers.find(d => d._id === formData.assignedDriver)?.name || 'Loading...'}
-                    </span>
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    Contact: 
-                    <span className="text-indigo-300 ml-2">
-                      {drivers.find(d => d._id === formData.assignedDriver)?.contactNumber || 'No contact number'}
-                    </span>
-                  </p>
-                  {drivers.find(d => d._id === formData.assignedDriver)?.email && (
-                    <p className="text-sm text-gray-400">
-                      Email: 
-                      <span className="text-indigo-300 ml-2">
-                        {drivers.find(d => d._id === formData.assignedDriver)?.email}
-                      </span>
-                    </p>
-                  )}
+                  {(() => {
+                    const selectedDriver = drivers.find(d => d._id === formData.assignedDriver);
+                    if (!selectedDriver) return <p className="text-gray-400">Loading driver details...</p>;
+                    
+                    // Debug to see what fields the selected driver has
+                    console.log('Selected driver details:', selectedDriver);
+                    
+                    return (
+                      <>
+                        <div className="flex items-center mb-2">
+                          <svg className="w-5 h-5 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span className="font-medium text-white">
+                            {selectedDriver.name}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center text-sm text-gray-400 bg-indigo-900/40 p-2 rounded">
+                          <svg className="w-4 h-4 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          <span className="text-yellow-300 font-medium">
+                            {selectedDriver.phoneNumber || 'No phone number available'}
+                          </span>
+                        </div>
+                        
+                        {/* Add email display */}
+                        <div className="flex items-center text-sm text-gray-400 bg-indigo-900/40 p-2 rounded mt-2">
+                          <svg className="w-4 h-4 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-blue-300 font-medium">
+                            {selectedDriver.email || 'No email available'}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>

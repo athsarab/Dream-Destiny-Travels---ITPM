@@ -38,15 +38,15 @@ const vehicleSchema = new mongoose.Schema({
       message: 'Please select a valid fuel type'
     }
   },
-  status: {
-    type: String,
-    enum: ['available', 'reserved', 'maintenance'],
-    default: 'available'
-  },
   assignedDriver: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Employee',
     default: null
+  },
+  status: {
+    type: String,
+    enum: ['available', 'reserved', 'maintenance'],
+    default: 'available'
   }
 }, {
   timestamps: true 

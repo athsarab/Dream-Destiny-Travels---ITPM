@@ -6,9 +6,18 @@ const mongoose = require('mongoose');
 // Get all vehicles
 router.get('/', async (req, res) => {
     try {
-        const vehicles = await Vehicle.find().sort('-createdAt').populate('assignedDriver', 'name contactNumber email');
+        // Use populate to include driver information
+        const vehicles = await Vehicle.find().sort('-createdAt')
+            .populate({
+                path: 'assignedDriver',
+                select: 'name contactNumber email',
+                model: 'Employee'
+            });
+        
+        console.log('Sending vehicles with driver data');
         res.json(vehicles);
     } catch (error) {
+        console.error('Error in GET /vehicles:', error);
         res.status(500).json({ message: 'Error fetching vehicles', error: error.message });
     }
 });
@@ -41,10 +50,15 @@ router.post('/', async (req, res) => {
         }
 
         const savedVehicle = await vehicle.save();
+        
+        // Fetch the complete vehicle with populated driver
+        const populatedVehicle = await Vehicle.findById(savedVehicle._id)
+            .populate('assignedDriver', 'name contactNumber email');
+        
         res.status(201).json({
             success: true,
             message: 'Vehicle added successfully!',
-            vehicle: savedVehicle
+            vehicle: populatedVehicle
         });
 
     } catch (error) {
@@ -59,12 +73,27 @@ router.post('/', async (req, res) => {
 // Get single vehicle
 router.get('/:id', async (req, res) => {
     try {
-        const vehicle = await Vehicle.findById(req.params.id).populate('assignedDriver', 'name contactNumber email');
+        // Use populate to include driver information
+        const vehicle = await Vehicle.findById(req.params.id)
+            .populate({
+                path: 'assignedDriver',
+                select: 'name contactNumber email',
+                model: 'Employee'
+            });
+        
         if (!vehicle) {
             return res.status(404).json({ message: 'Vehicle not found' });
         }
+        
+        console.log('Fetched vehicle with driver data:', {
+            id: vehicle._id,
+            vehicleId: vehicle.vehicleId,
+            driver: vehicle.assignedDriver
+        });
+        
         res.json(vehicle);
     } catch (error) {
+        console.error('Error in GET /vehicles/:id:', error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -100,11 +129,21 @@ router.put('/:id', async (req, res) => {
             req.params.id,
             updateData,
             { new: true, runValidators: true }
-        );
+        ).populate({
+            path: 'assignedDriver',
+            select: 'name contactNumber email',
+            model: 'Employee'
+        });
 
         if (!vehicle) {
             return res.status(404).json({ message: 'Vehicle not found' });
         }
+
+        // Log updated vehicle with driver info
+        console.log('Updated vehicle with driver info:', {
+            id: vehicle._id,
+            driver: vehicle.assignedDriver
+        });
 
         res.json(vehicle);
     } catch (error) {
