@@ -1,12 +1,15 @@
-// App.jsx
 import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Review from './pages/review';
-import { BrowserRouter } from 'react-router-dom';
+import Complaint from './pages/complaint';
 
 const App = () => {
   return (
     <BrowserRouter>
-      <Review />
+      <Routes>
+        <Route path="/" element={<Review />} />
+        <Route path="/complaint" element={<Complaint />} />
+      </Routes>
     </BrowserRouter>
   );
 };

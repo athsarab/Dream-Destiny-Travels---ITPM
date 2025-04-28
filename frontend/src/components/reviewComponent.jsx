@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, Star, MessageSquare, Users, MapPin, Coffee, PenTool, X } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 export default function ReviewSection() {
   const [open, setOpen] = useState(false);
@@ -8,6 +9,7 @@ export default function ReviewSection() {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewType, setReviewType] = useState("hotel");
+  const navigate = useNavigate(); // Add this line
   
   // Add state for controlling blur
   const [isBlurred, setIsBlurred] = useState(false);
@@ -70,6 +72,11 @@ export default function ReviewSection() {
     setRating(0);
     // Reset form fields if needed
   };
+  const handleComplaintClick = () => {
+    setOpen(false);
+    navigate('/complaint');
+  };
+
 
   return (
     <div className="relative container mx-auto max-w-6xl p-6 font-poppins bg-white rounded-xl shadow-md border border-gray-100">
@@ -145,28 +152,33 @@ export default function ReviewSection() {
 
             {/* Dropdown - Kept as requested */}
             <div className="relative">
-              <button
-                onClick={() => setOpen(!open)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm bg-white border border-blue-200 text-blue-600 shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                Feedback{" "}
-                <ChevronDown
-                  className={`h-4 w-4 transform ${
-                    open ? "rotate-180" : ""
-                  } transition-transform`}
-                />
-              </button>
-              {open && (
-                <div className="absolute right-0 mt-2 w-64 bg-white border rounded-xl shadow-xl z-10 overflow-hidden">
-                  <div className="px-4 py-3 bg-gradient-to-r from-blue-500/10 to-indigo-600/10 text-sm font-medium text-gray-700">
-                    Options
-                  </div>
-                  <button className="flex items-center px-4 py-3 text-sm w-full text-left hover:bg-blue-50 transition">
-                    <Users className="h-4 w-4 mr-3 text-blue-500" />
-                    Complaint
-                  </button>
-                </div>
-              )}
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm bg-white border border-blue-200 text-blue-600 shadow-sm hover:shadow-md transition-all duration-300"
+        >
+          Feedback{" "}
+          <ChevronDown
+            className={`h-4 w-4 transform ${
+              open ? "rotate-180" : ""
+            } transition-transform`}
+          />
+        </button>
+        {open && (
+          <div className="absolute right-0 mt-2 w-64 bg-white border rounded-xl shadow-xl z-10 overflow-hidden">
+            <div className="px-4 py-3 bg-gradient-to-r from-blue-500/10 to-indigo-600/10 text-sm font-medium text-gray-700">
+              Options
+            </div>
+            {/* Modified complaint button with navigation */}
+            <button 
+              onClick={handleComplaintClick}
+              className="flex items-center px-4 py-3 text-sm w-full text-left hover:bg-blue-50 transition"
+            >
+              <Users className="h-4 w-4 mr-3 text-blue-500" />
+              Complaint
+            </button>
+          </div>
+        )}
+             
             </div>
           </div>
         </div>
