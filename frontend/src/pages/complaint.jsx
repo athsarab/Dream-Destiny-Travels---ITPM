@@ -24,10 +24,10 @@ const Complaint = () => {
     <div className="container mx-auto max-w-2xl p-6 font-poppins">
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-center mb-3 bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold text-center mb-3 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Submit a Complaint
           </h1>
-          <div className="w-20 h-1 mx-auto bg-gradient-to-r from-red-500 to-orange-500 rounded-full mb-4"></div>
+          <div className="w-20 h-1 mx-auto bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mb-4"></div>
           <p className="text-center text-gray-600">
             We take your concerns seriously. Please fill out the form below.
           </p>
@@ -57,7 +57,7 @@ const Complaint = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
@@ -96,7 +96,7 @@ const Complaint = () => {
 
           <button
             type="submit"
-            className="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+            className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
           >
             Submit Complaint
           </button>
