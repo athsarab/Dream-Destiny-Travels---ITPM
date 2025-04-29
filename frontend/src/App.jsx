@@ -65,6 +65,17 @@ function App() {
             <Route path="/employee-manager/edit-vehicle/:id" element={<VehicleManagement />} />
             <Route path="/employee-manager/add-hotel" element={<HotelManagement />} />
 
+            {/* Blog Page */}
+            <Route path="/blog" element={<Blog />} />
+
+            {/* User Profile */}
+            <Route path="/profile1" element={<Profile1 />} /> {/* Changed from Profile to Profile1 */}
+
+            {/* Login and Register */}  
+            <Route path="/Login1" element={<Login />} />
+            <Route path="/Signup1" element={<Register />} />
+            
+
           </Routes>
         </main>
         <Footer />
