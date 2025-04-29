@@ -1,18 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const VideoBackground = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
   return (
-    <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-      <div className="absolute inset-0 bg-black/50 z-10" /> {/* Overlay */}
+    <div className="fixed inset-0 z-0">
+      {isLoading && (
+        <div className="absolute inset-0 bg-black/90 flex items-center justify-center">
+          <div className="text-white">Loading video...</div>
+        </div>
+      )}
       <video
         autoPlay
-        loop
         muted
+        loop
         playsInline
-        className="absolute top-0 left-0 min-h-full min-w-full object-cover"
+        onLoadedData={() => setIsLoading(false)}
+        className="absolute inset-0 w-full h-full object-cover"
       >
         <source src="/homepagevideo.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
       </video>
+      <div className="absolute inset-0 bg-black/50" />
     </div>
   );
 };
