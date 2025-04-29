@@ -13,6 +13,8 @@ export default function ReviewSection() {
   
   // Add state for controlling blur
   const [isBlurred, setIsBlurred] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editedComment, setEditedComment] = useState("");
 
   // Effect to handle body scroll lock when modal is open
   useEffect(() => {
@@ -78,8 +80,21 @@ export default function ReviewSection() {
   };
 
   const handleEditReview = (id) => {
-    console.log('Editing review:', id);
-    // Add your edit logic here
+    const review = reviews.find(r => r.id === id);
+    setEditingId(id);
+    setEditedComment(review.comment);
+  };
+
+  const handleSaveEdit = (id) => {
+    // Here you would typically update the review in your backend
+    console.log('Saving edited review:', id, editedComment);
+    setEditingId(null);
+    setEditedComment("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditedComment("");
   };
 
   const handleDeleteReview = (id) => {
@@ -249,7 +264,32 @@ export default function ReviewSection() {
                 </div>
               </div>
               
-              <p className="mt-4 text-gray-700 leading-relaxed">{review.comment}</p>
+              {editingId === review.id ? (
+                <div className="mt-4">
+                  <textarea
+                    value={editedComment}
+                    onChange={(e) => setEditedComment(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                    rows="4"
+                  />
+                  <div className="flex justify-end gap-2 mt-3">
+                    <button
+                      onClick={handleCancelEdit}
+                      className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleSaveEdit(review.id)}
+                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm hover:shadow-md transition-all text-sm"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-4 text-gray-700 leading-relaxed">{review.comment}</p>
+              )}
               
               {review.reply && (
                 <div className="mt-4 ml-4 pl-4 border-l-2 border-blue-200">
