@@ -13,9 +13,8 @@ import HomePage from './pages/HomePage.jsx';
 import PackagePage from './pages/PackagePage.jsx';
 import CustomPackageCreate from './pages/CustomPackageCreate.jsx';
 
-// Employee Manager Pages
 import EmployeeManagerDashboard from './pages/EmployeeManagerDashboard.jsx';
-import AddEmployeeForm from './pages/AddEmployeeForm.jsx'; 
+import AddEmployeeForm from './pages/AddEmployeeForm.jsx';
 import EmployeeList from './pages/EmployeeList.jsx';
 import HotelManagement from './pages/HotelManagement.jsx';
 import HotelList from './pages/HotelList.jsx';
@@ -23,6 +22,7 @@ import VehicleManagement from './pages/VehicleManagement.jsx';
 import VehicleList from './pages/VehicleList.jsx';
 import AddHotel from './pages/AddHotel.jsx';
 import EditHotel from './pages/EditHotel.jsx';
+
 
 // Login and Register
 import Login from './pages/Login1.jsx';
@@ -60,6 +60,10 @@ function App() {
             <Route path="/employee-manager/hotels" element={<HotelManagement />} />
             <Route path="/employee-manager/hotels-list" element={<HotelList />} />
             <Route path="/employee-manager/edit-hotel/:id" element={<EditHotel />} />
+            <Route path="/employee-manager/vehicles" element={<VehicleManagement />} />
+            <Route path="/employee-manager/vehicles-list" element={<VehicleList />} />
+            <Route path="/employee-manager/edit-vehicle/:id" element={<VehicleManagement />} />
+            <Route path="/employee-manager/add-hotel" element={<HotelManagement />} />
 
           </Routes>
         </main>
