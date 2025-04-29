@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, Star, MessageSquare, Users, MapPin, Coffee, PenTool, X } from "lucide-react";
+import { ChevronDown, Star, MessageSquare, Users, MapPin, Coffee, PenTool, X, Edit2, Trash2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
 export default function ReviewSection() {
@@ -77,6 +77,17 @@ export default function ReviewSection() {
     navigate('/complaint');
   };
 
+  const handleEditReview = (id) => {
+    console.log('Editing review:', id);
+    // Add your edit logic here
+  };
+
+  const handleDeleteReview = (id) => {
+    if (window.confirm('Are you sure you want to delete this review?')) {
+      console.log('Deleting review:', id);
+      // Add your delete logic here
+    }
+  };
 
   return (
     <div className="relative container mx-auto max-w-6xl p-6 font-poppins bg-white rounded-xl shadow-md border border-gray-100">
@@ -187,6 +198,31 @@ export default function ReviewSection() {
         <div className="space-y-6">
           {filteredReviews.map((review) => (
             <div key={review.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
+              <div className="flex justify-between items-start flex-wrap mb-4">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleEditReview(review.id)}
+                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                    title="Edit review"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteReview(review.id)}
+                    className="p-1.5 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                    title="Delete review"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize
+                  ${review.type === "hotel" ? "bg-blue-100 text-blue-700" : ""}
+                  ${review.type === "guide" ? "bg-teal-100 text-teal-700" : ""}
+                  ${review.type === "vehicle" ? "bg-purple-100 text-purple-700" : ""}
+                `}>
+                  {review.type}
+                </span>
+              </div>
               <div className="flex justify-between items-start flex-wrap">
                 <div className="flex items-center mb-2 sm:mb-0">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 mr-4 border border-blue-200 text-sm font-medium">
@@ -211,13 +247,6 @@ export default function ReviewSection() {
                     </div>
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize
-                  ${review.type === "hotel" ? "bg-blue-100 text-blue-700" : ""}
-                  ${review.type === "guide" ? "bg-teal-100 text-teal-700" : ""}
-                  ${review.type === "vehicle" ? "bg-purple-100 text-purple-700" : ""}
-                `}>
-                  {review.type}
-                </span>
               </div>
               
               <p className="mt-4 text-gray-700 leading-relaxed">{review.comment}</p>
