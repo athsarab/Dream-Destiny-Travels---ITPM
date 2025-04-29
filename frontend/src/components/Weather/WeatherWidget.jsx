@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import moment from 'moment';
-import { WiDaySunny, WiRain, WiCloudy, WiDayHaze, WiStrongWind, WiHumidity, WiThermometer } from 'react-icons/wi';
+import { WiDaySunny, WiRain, WiCloudy, WiDayHaze, WiStrongWind, WiHumidity, WiThermometer, WiDayRainMix, WiSnow, WiThunderstorm, WiFog } from 'react-icons/wi';
 import { motion } from 'framer-motion';
 
-const WEATHER_API_KEY = '2beb470d89e2444e59870f9e1b143a04'; // Replace with your OpenWeatherMap API key
+const WEATHER_API_KEY = '2beb470d89e2444e59870f9e1b143a04';
 
 const locations = {
   Colombo: { lat: 6.9271, lon: 79.8612 },
@@ -37,7 +37,7 @@ const WeatherWidget = ({ selectedLocation: propSelectedLocation }) => {
           `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`
         );
 
-        // Fetch 5-day forecast (this is the correct endpoint for the free tier)
+        // Fetch forecast
         const forecastResponse = await axios.get(
           `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`
         );
@@ -45,9 +45,28 @@ const WeatherWidget = ({ selectedLocation: propSelectedLocation }) => {
         setCurrentWeather(currentResponse.data);
         
         // Process forecast data to get daily forecasts
-        const dailyForecasts = forecastResponse.data.list.filter(item => 
-          item.dt_txt.includes('12:00:00')
-        ).slice(0, 5);
+        // Group forecast data by day (using the date part of dt_txt)
+        const groupedByDay = {};
+        forecastResponse.data.list.forEach(item => {
+          const date = item.dt_txt.split(' ')[0];
+          if (!groupedByDay[date]) {
+            groupedByDay[date] = [];
+          }
+          groupedByDay[date].push(item);
+        });
+        
+        // Get one forecast per day (noon forecast is usually most representative)
+        const dailyForecasts = Object.keys(groupedByDay).map(date => {
+          const dayData = groupedByDay[date];
+          // Try to find noon forecast (closest to 12:00)
+          const noonForecast = dayData.reduce((closest, current) => {
+            const currentHour = parseInt(current.dt_txt.split(' ')[1].split(':')[0]);
+            const closestHour = parseInt(closest.dt_txt.split(' ')[1].split(':')[0]);
+            return Math.abs(currentHour - 12) < Math.abs(closestHour - 12) ? current : closest;
+          }, dayData[0]);
+          
+          return noonForecast;
+        }).slice(0, 7); // Get up to 7 days
         
         setForecast(dailyForecasts);
       } catch (error) {
@@ -61,11 +80,16 @@ const WeatherWidget = ({ selectedLocation: propSelectedLocation }) => {
 
   const getWeatherIcon = (condition) => {
     switch (condition) {
-      case 'Clear': return <WiDaySunny className="text-yellow-400" />;
-      case 'Rain': return <WiRain className="text-blue-400" />;
-      case 'Clouds': return <WiCloudy className="text-gray-400" />;
-      case 'Haze': return <WiDayHaze className="text-gray-300" />;
-      default: return <WiDaySunny className="text-yellow-400" />;
+      case 'Clear': return <WiDaySunny className="text-yellow-400" size={42} />;
+      case 'Rain': 
+      case 'Drizzle': return <WiRain className="text-blue-400" size={42} />;
+      case 'Clouds': return <WiCloudy className="text-gray-400" size={42} />;
+      case 'Snow': return <WiSnow className="text-blue-100" size={42} />;
+      case 'Thunderstorm': return <WiThunderstorm className="text-purple-400" size={42} />;
+      case 'Mist':
+      case 'Fog': return <WiFog className="text-gray-300" size={42} />;
+      case 'Haze': return <WiDayHaze className="text-gray-300" size={42} />;
+      default: return <WiDaySunny className="text-yellow-400" size={42} />;
     }
   };
 
@@ -154,27 +178,30 @@ const WeatherWidget = ({ selectedLocation: propSelectedLocation }) => {
         </div>
       )}
 
-      {/* 5-Day Forecast */}
-      {forecast && (
+      {/* Weekly Forecast */}
+      {forecast && forecast.length > 0 && (
         <div>
-          <h3 className="text-xl font-semibold text-white mb-4">5-Day Forecast</h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <h3 className="text-xl font-semibold text-white mb-4">Weekly Forecast</h3>
+          <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
             {forecast.map((day, index) => (
               <div
                 key={index}
-                className="bg-gray-700/50 rounded-lg p-4 text-center"
+                className="bg-gray-700/50 rounded-lg p-4 text-center transform hover:scale-105 transition-all duration-300"
               >
                 <div className="text-gray-400 mb-2">
                   {moment(day.dt_txt).format('ddd')}
                 </div>
-                <div className="text-3xl mb-2">
+                <div className="text-gray-300 text-xs mb-2">
+                  {moment(day.dt_txt).format('MMM D')}
+                </div>
+                <div className="flex justify-center mb-2">
                   {getWeatherIcon(day.weather[0].main)}
                 </div>
-                <div className="text-white font-semibold">
-                  {Math.round(day.main.temp_max)}°
+                <div className="text-white font-semibold text-lg">
+                  {Math.round(day.main.temp_max)}°C
                 </div>
-                <div className="text-gray-400 text-sm">
-                  {Math.round(day.main.temp_min)}°
+                <div className="text-gray-400 text-xs mt-1">
+                  {day.weather[0].description}
                 </div>
               </div>
             ))}
