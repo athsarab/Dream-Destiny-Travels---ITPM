@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Shared/Navbar.jsx';
 import Footer from './components/Shared/Footer.jsx';
 
@@ -18,6 +19,9 @@ import AddEmployeeForm from './pages/AddEmployeeForm.jsx';
 import EmployeeList from './pages/EmployeeList.jsx';
 import HotelManagement from './pages/HotelManagement.jsx';
 import HotelList from './pages/HotelList.jsx';
+import VehicleManagement from './pages/VehicleManagement.jsx';
+import VehicleList from './pages/VehicleList.jsx';
+import AddHotel from './pages/AddHotel.jsx';
 import EditHotel from './pages/EditHotel.jsx';
 
 // Login and Register
@@ -56,17 +60,7 @@ function App() {
             <Route path="/employee-manager/hotels" element={<HotelManagement />} />
             <Route path="/employee-manager/hotels-list" element={<HotelList />} />
             <Route path="/employee-manager/edit-hotel/:id" element={<EditHotel />} />
-            <Route path="/employee-manager/vehicles" element={<EmployeeManagerDashboard />} />
 
-            {/* Login and Register */}  
-            <Route path="/Login1" element={<Login />} />
-            <Route path="/Signup1" element={<Register />} />
-
-            {/* User Profile */}
-            <Route path="/profile1" element={<Profile1 />} /> {/* Changed from Profile to Profile1 */}
-
-            {/* Blog Page */}
-            <Route path="/blog" element={<Blog />} />
           </Routes>
         </main>
         <Footer />

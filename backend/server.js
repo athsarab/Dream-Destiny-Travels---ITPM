@@ -1,9 +1,18 @@
-require('dotenv').config();
+try {
+  require('dotenv').config();
+} catch (err) {
+  console.error('Error loading dotenv. Make sure to run "npm install dotenv"');
+  console.error('Using default environment variables instead');
+  // Set default values if .env fails to load
+  process.env.PORT = process.env.PORT || 5000;
+}
+
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const path = require('path');
 const fs = require('fs');
+const vehicleRoutes = require('./routes/vehicleRoutes');
 
 const app = express();
 
@@ -13,33 +22,13 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir);
 }
 
-// Configure CORS before other middleware
-app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true,
-    exposedHeaders: ['Content-Type', 'Content-Disposition']
 }));
-
-// Add request logging middleware
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
-
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-    setHeaders: (res, path, stat) => {
-        res.set({
-            'Access-Control-Allow-Origin': '*',
-            'Cache-Control': 'public, max-age=3600',
-            'Content-Type': 'image/*'
-        });
-    }
-}));
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+
 
 // Simple health check endpoint
 app.get('/api/health', (req, res) => {
@@ -54,6 +43,7 @@ app.use('/api/custom-packages', require('./routes/customPackageRoutes'));
 app.use('/api/employees', require('./routes/employeeRoutes'));
 app.use('/api/hotels', require('./routes/hotelRoutes'));
 
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
@@ -65,14 +55,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB first, then start server (avoid connecting twice)
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('Failed to connect to database:', err);
     process.exit(1);
   });
