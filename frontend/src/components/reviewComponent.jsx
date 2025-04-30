@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, Star, MessageSquare, Users, MapPin, Coffee, PenTool, X, Edit2, Trash2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
-import reviewService from '../services/reviewService';
 
 export default function ReviewSection() {
   const [open, setOpen] = useState(false);
@@ -16,8 +15,6 @@ export default function ReviewSection() {
   const [isBlurred, setIsBlurred] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editedComment, setEditedComment] = useState("");
-  const [reviews, setReviews] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Effect to handle body scroll lock when modal is open
   useEffect(() => {
@@ -34,47 +31,49 @@ export default function ReviewSection() {
     };
   }, [showReviewForm]);
 
-  useEffect(() => {
-    fetchReviews();
-  }, []);
-
-  const fetchReviews = async () => {
-    try {
-      const response = await reviewService.getAllReviews();
-      setReviews(response.data);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-      setIsLoading(false);
+  const reviews = [
+    {
+      id: 1,
+      type: "hotel",
+      name: "Alex Walker",
+      rating: 5,
+      date: "March 15, 2025",
+      country: "Australia",
+      comment: "The dormitory was clean and spacious with comfortable beds. Great secure lockers and power outlets for each bunk.",
+      reply: "Thanks Alex! We're glad you enjoyed our newly renovated dormitories."
+    },
+    {
+      id: 2,
+      type: "guide",
+      name: "Maria Garcia",
+      rating: 4,
+      date: "March 12, 2025",
+      country: "Spain",
+      comment: "Great common areas and kitchen facilities. The rooftop terrace was perfect for meeting other travelers."
+    },
+    {
+      id: 3,
+      type: "vehicle",
+      name: "Jan Kowalski",
+      rating: 5,
+      date: "March 10, 2025",
+      country: "Poland",
+      comment: "The staff was incredibly helpful with local recommendations and organizing day trips!"
     }
-  };
+  ];
 
   const filteredReviews = activeTab === "all" 
     ? reviews 
     : reviews.filter(review => review.type === activeTab);
 
-  const handleSubmitReview = async (e) => {
+  const handleSubmitReview = (e) => {
     e.preventDefault();
-    try {
-      const formData = {
-        type: reviewType,
-        name: e.target.querySelector('input[placeholder="John Doe"]').value,
-        country: e.target.querySelector('input[placeholder="United States"]').value,
-        rating: rating,
-        comment: e.target.querySelector('textarea').value,
-        date: new Date().toISOString()
-      };
-
-      await reviewService.createReview(formData);
-      await fetchReviews();
-      setShowReviewForm(false);
-      setRating(0);
-    } catch (error) {
-      console.error('Error creating review:', error);
-      alert('Failed to create review');
-    }
+    // Here you would typically handle the form submission
+    // For now, we'll just close the form
+    setShowReviewForm(false);
+    setRating(0);
+    // Reset form fields if needed
   };
-
   const handleComplaintClick = () => {
     setOpen(false);
     navigate('/complaint');
@@ -320,7 +319,7 @@ export default function ReviewSection() {
             <div className="text-sm text-gray-600 mt-1">Happy Travelers</div>
           </div>
           <div className="bg-gradient-to-br from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-100 text-center">
-            <div className="text-3xl font-bold text-purple-600">500+</</div>
+            <div className="text-3xl font-bold text-purple-600">500+</div>
             <div className="text-sm text-gray-600 mt-1">Verified Reviews</div>
           </div>
         </div>
