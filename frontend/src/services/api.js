@@ -111,6 +111,40 @@ const apiService = {
   deletePackage: (id) => api.delete(`/api/packages/${id}`),
 
   // Custom package methods
+  getCustomPackageCategories: async () => {
+    try {
+      console.log('Fetching custom package categories...');
+      const response = await api.get('/api/custom-packages/categories');
+      console.log('Categories response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching custom package categories:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch categories');
+    }
+  },
+
+  getAvailableItems: async () => {
+    try {
+      console.log('Fetching available items...');
+      const response = await api.get('/api/custom-packages/available-items');
+      console.log('Available items response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching available items:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch items');
+    }
+  },
+
+  addCustomPackageOption: async (data) => {
+    try {
+      const response = await api.post('/api/custom-packages/options', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding custom package option:', error);
+      throw error;
+    }
+  },
+
   getCustomBookings: () => api.get('/api/custom-packages/bookings'),
   updateCustomBooking: (id, status) => {
     console.log('Sending update request:', { id, status });
