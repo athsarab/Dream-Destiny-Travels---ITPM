@@ -4,6 +4,9 @@ const mongoose = require('mongoose'); // Add this import
 const CustomPackageOption = require('../models/CustomPackageOption');
 const CustomPackageBooking = require('../models/CustomPackageBooking');
 const nodemailer = require('nodemailer');
+const Employee = require('../models/Employee'); // Import Employee model
+const Hotel = require('../models/Hotel'); // Import Hotel model
+const Vehicle = require('../models/Vehicle'); // Import Vehicle model
 
 // Debug middleware
 router.use((req, res, next) => {
@@ -13,11 +16,41 @@ router.use((req, res, next) => {
 
 router.get('/categories', async (req, res) => {
     try {
-        const categories = await CustomPackageOption.find().sort({ name: 1 });
-        res.json(categories);
+        console.log('Fetching custom package categories...');
+        
+        const categories = await CustomPackageOption.find()
+            .populate({
+                path: 'options.itemId',
+                select: 'name email phoneNumber location type model seats vehicleId',
+                match: { status: { $ne: 'inactive' } }
+            })
+            .sort({ name: 1 });
+
+        console.log('Found categories:', categories.length);
+
+        // Filter out unavailable options and transform data
+        const processedCategories = categories.map(category => {
+            const processed = {
+                ...category.toObject(),
+                options: (category.options || [])
+                    .filter(opt => opt.isAvailable && opt.itemId) // Only include available options with valid itemId
+                    .map(opt => ({
+                        ...opt,
+                        name: opt.itemId?.name || opt.name,
+                        description: opt.itemId?.description || opt.description
+                    }))
+            };
+            console.log(`Processed category ${category.name}:`, processed.options.length, 'options');
+            return processed;
+        });
+
+        res.json(processedCategories);
     } catch (error) {
         console.error('Error in GET /categories:', error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ 
+            message: 'Failed to fetch categories',
+            error: error.message 
+        });
     }
 });
 
@@ -207,6 +240,88 @@ router.delete('/bookings/:id', async (req, res) => {
     } catch (error) {
         console.error('Error deleting booking:', error);
         res.status(500).json({ message: error.message });
+    }
+});
+
+// Add new route to fetch all required data
+router.get('/available-items', async (req, res) => {
+    try {
+        console.log('Fetching available items...');
+        
+        const [agents, hotels, vehicles] = await Promise.all([
+            Employee.find({ 
+                role: 'Travel Agent',
+                status: 'active' 
+            })
+            .select('name email phoneNumber')
+            .lean(),
+            
+            Hotel.find({ status: 'available' })
+                .select('name location roomTypes roomPrices roomQuantities availableRooms')
+                .lean()
+                .then(hotels => hotels.map(hotel => {
+                    const roomPrices = hotel.roomPrices instanceof Map ? Object.fromEntries(hotel.roomPrices) : hotel.roomPrices;
+                    const roomQuantities = hotel.roomQuantities instanceof Map ? Object.fromEntries(hotel.roomQuantities) : hotel.roomQuantities;
+                    
+                    // Get available room types with price and quantity
+                    const availableRooms = (hotel.roomTypes || [])
+                        .map(type => ({
+                            type,
+                            price: parseFloat(roomPrices[type] || 0),
+                            available: parseInt(roomQuantities[type] || 0)
+                        }))
+                        .filter(room => room.available > 0);
+
+                    return {
+                        _id: hotel._id.toString(),
+                        name: hotel.name,
+                        description: `${hotel.name} - ${hotel.location}`,
+                        location: hotel.location,
+                        rooms: availableRooms,
+                        totalRooms: hotel.availableRooms
+                    };
+                })),
+
+            Vehicle.find({ status: 'available' })
+            .select('vehicleId type model seats')
+            .lean()
+        ]);
+
+        const response = {
+            agents: agents.map(a => ({
+                _id: a._id.toString(),
+                name: a.name,
+                description: `${a.name} (${a.email || 'No email'})`,
+                email: a.email,
+                phoneNumber: a.phoneNumber
+            })),
+            hotels: hotels.filter(h => h.rooms.length > 0), // Only include hotels with available rooms
+            vehicles: vehicles.map(v => ({
+                _id: v._id.toString(),
+                name: v.vehicleId || v.type,
+                description: `${v.type} ${v.model} - ${v.seats} seats`,
+                type: v.type,
+                model: v.model,
+                seats: v.seats
+            }))
+        };
+
+        console.log('Processed hotel data:', 
+            response.hotels.map(h => ({
+                name: h.name,
+                availableRooms: h.rooms.length,
+                types: h.availableRoomTypes
+            }))
+        );
+
+        res.json(response);
+    } catch (error) {
+        console.error('Error fetching available items:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to fetch available items',
+            error: error.message
+        });
     }
 });
 
