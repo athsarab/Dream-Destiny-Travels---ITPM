@@ -41,12 +41,11 @@ app.get('/api/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
-
 app.use('/api/packages', require('./routes/packageRoutes'));
 app.use('/api/custom-packages', require('./routes/customPackageRoutes'));
 app.use('/api/employees', require('./routes/employeeRoutes'));
 app.use('/api/hotels', require('./routes/hotelRoutes'));
-
+app.use('/api/vehicles', vehicleRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

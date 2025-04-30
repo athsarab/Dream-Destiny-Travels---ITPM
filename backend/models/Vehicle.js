@@ -3,53 +3,51 @@ const mongoose = require('mongoose');
 const vehicleSchema = new mongoose.Schema({
   vehicleId: {
     type: String,
-    required: [true, 'Vehicle ID is required'],
+    required: true,
     unique: true,
     trim: true
   },
   type: {
     type: String,
-    required: [true, 'Vehicle type is required'],
-    enum: ['car', 'van', 'jeep', 'tuk-tuks','motorcycle']
+    required: true,
+    enum: ['car', 'van', 'jeep', 'tuk-tuk', 'motorcycle'],
+    trim: true
   },
   model: {
     type: String,
-    required: [true, 'Vehicle model is required'],
+    required: true,
     trim: true
   },
   seats: {
     type: Number,
-    required: [true, 'Number of seats is required'],
-    min: [1, 'Must have at least 1 seat']
-  },
-  licenseInsuranceUpdated: {
-    type: Date,
-    required: [true, 'License update date is required']
-  },
-  licenseInsuranceExpiry: {
-    type: Date,
-    required: [true, 'License expiry date is required']
+    required: true,
+    min: 1
   },
   fuelType: {
     type: String,
-    required: [true, 'Fuel type is required'],
-    enum: {
-      values: ['petrol', 'diesel', 'electric', 'hybrid'],
-      message: 'Please select a valid fuel type'
-    }
+    required: true,
+    enum: ['petrol', 'diesel', 'electric', 'hybrid'],
+    trim: true
   },
-  assignedDriver: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Employee',
-    default: null
+  licenseInsuranceUpdated: {
+    type: Date,
+    required: true
+  },
+  licenseInsuranceExpiry: {
+    type: Date,
+    required: true
   },
   status: {
     type: String,
-    enum: ['available', 'reserved', 'maintenance'],
-    default: 'available'
+    default: 'available',
+    enum: ['available', 'booked', 'maintenance'],
+    trim: true
+  },
+  assignedDriver: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Employee', // Assuming your employees are stored in an Employee collection
+    default: null
   }
-}, {
-  timestamps: true 
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Vehicle', vehicleSchema);
