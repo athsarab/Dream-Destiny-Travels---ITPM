@@ -42,7 +42,7 @@ const apiService = {
   // Updated package methods with better error handling and retry capability
   getPackages: async (retryCount = 0) => {
     try {
-      console.log('Fetching packages from:', `${baseURL}/api/packages`);
+      console.log(`Fetching packages from: ${baseURL}/api/packages`);
       
       // Try alternate endpoint if we're retrying
       const endpoint = retryCount > 0 ? '/api/packages/public' : '/api/packages';
@@ -111,46 +111,58 @@ const apiService = {
   deletePackage: (id) => api.delete(`/api/packages/${id}`),
 
   // Custom package methods
-  getCustomPackageCategories: async () => {
-    try {
-      console.log('Fetching custom package categories...');
-      const response = await api.get('/api/custom-packages/categories');
-      console.log('Categories response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching custom package categories:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch categories');
-    }
-  },
-
-  getAvailableItems: async () => {
-    try {
-      console.log('Fetching available items...');
-      const response = await api.get('/api/custom-packages/available-items');
-      console.log('Available items response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching available items:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch items');
-    }
-  },
-
-  addCustomPackageOption: async (data) => {
-    try {
-      const response = await api.post('/api/custom-packages/options', data);
-      return response.data;
-    } catch (error) {
-      console.error('Error adding custom package option:', error);
-      throw error;
-    }
-  },
-
   getCustomBookings: () => api.get('/api/custom-packages/bookings'),
   updateCustomBooking: (id, status) => {
     console.log('Sending update request:', { id, status });
     return api.put(`/api/custom-packages/bookings/${id}`, { status: status });
   },
   deleteCustomBooking: (id) => api.delete(`/api/custom-packages/bookings/${id}`),
+
+  // Add method to get custom package categories
+  getCustomPackageCategories: async () => {
+    // ...existing code...
+  },
+  
+  // Add method to delete custom package option
+  deleteCustomPackageOption: async (categoryId, optionId) => {
+    // ...existing code...
+  },
+
+  // Add method to update custom package option
+  updateCustomPackageOption: async (categoryId, optionId, optionData) => {
+    // ...existing code...
+  },
+
+  // Add new method for creating custom package options with better error handling
+  createCustomPackageOptions: async (categoryData) => {
+    try {
+      console.log('Creating custom package options:', categoryData);
+      const response = await api.post('/api/custom-packages/options', categoryData);
+      console.log('Create response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating custom package options:', error);
+      
+      // Provide more helpful error messages
+      if (error.response) {
+        // Server responded with error
+        if (error.response.status === 409) {
+          throw new Error('A category with this name already exists. Please use a different name.');
+        } else if (error.response.status === 400) {
+          throw new Error(error.response.data?.message || 'Invalid data. Please check your inputs.');
+        } else if (error.response.status === 500) {
+          throw new Error('Server error. Please try again later or contact support.');
+        }
+        throw new Error(error.response.data?.message || 'Request failed');
+      } else if (error.request) {
+        // Request made but no response
+        throw new Error('No response from server. Please check your internet connection.');
+      } else {
+        // Request setup error
+        throw error;
+      }
+    }
+  },
 
   // Update package booking methods to use the api instance instead of axios directly
   submitPackageBooking: (bookingData) => {
@@ -228,4 +240,4 @@ const apiService = {
   axios: api
 };
 
-export default apiService;
+export default apiService;
