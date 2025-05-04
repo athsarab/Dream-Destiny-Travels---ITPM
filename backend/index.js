@@ -18,6 +18,6 @@ app.use(bodyParser.urlencoded({extended:true}));
 app.get("/",(req,res)=>res.send("Hellow Server is Running...."));
 app.use("/api/reviews",routes)
 
-const PORT = 3000;
+const PORT = 8090; // Changed port to 8090
 
 app.listen(PORT,() => console.log(`Server running on PORT ${PORT}`));

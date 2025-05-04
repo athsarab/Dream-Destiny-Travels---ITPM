@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, Star, MessageSquare, Users, MapPin, Coffee, PenTool, X, Edit2, Trash2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import reviewService from '../services/reviewService';
 
 export default function ReviewSection() {
   const [open, setOpen] = useState(false);
@@ -15,6 +16,8 @@ export default function ReviewSection() {
   const [isBlurred, setIsBlurred] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editedComment, setEditedComment] = useState("");
+  const [reviews, setReviews] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Effect to handle body scroll lock when modal is open
   useEffect(() => {
@@ -31,49 +34,45 @@ export default function ReviewSection() {
     };
   }, [showReviewForm]);
 
-  const reviews = [
-    {
-      id: 1,
-      type: "hotel",
-      name: "Alex Walker",
-      rating: 5,
-      date: "March 15, 2025",
-      country: "Australia",
-      comment: "The dormitory was clean and spacious with comfortable beds. Great secure lockers and power outlets for each bunk.",
-      reply: "Thanks Alex! We're glad you enjoyed our newly renovated dormitories."
-    },
-    {
-      id: 2,
-      type: "guide",
-      name: "Maria Garcia",
-      rating: 4,
-      date: "March 12, 2025",
-      country: "Spain",
-      comment: "Great common areas and kitchen facilities. The rooftop terrace was perfect for meeting other travelers."
-    },
-    {
-      id: 3,
-      type: "vehicle",
-      name: "Jan Kowalski",
-      rating: 5,
-      date: "March 10, 2025",
-      country: "Poland",
-      comment: "The staff was incredibly helpful with local recommendations and organizing day trips!"
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const fetchReviews = async () => {
+    try {
+      const response = await reviewService.getAllReviews();
+      setReviews(response.data);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      setIsLoading(false);
     }
-  ];
+  };
 
   const filteredReviews = activeTab === "all" 
     ? reviews 
     : reviews.filter(review => review.type === activeTab);
 
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault();
-    // Here you would typically handle the form submission
-    // For now, we'll just close the form
-    setShowReviewForm(false);
-    setRating(0);
-    // Reset form fields if needed
+    try {
+      const formData = {
+        reviewerName: e.target.querySelector('input[placeholder="John Doe"]').value,
+        reviewerCountry: e.target.querySelector('input[placeholder="United States"]').value,
+        comment: e.target.querySelector('textarea').value
+      };
+
+      await reviewService.createReview(formData);
+      await fetchReviews();
+      setShowReviewForm(false);
+      setRating(0);
+      alert('Review submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert('Failed to submit review');
+    }
   };
+
   const handleComplaintClick = () => {
     setOpen(false);
     navigate('/complaint');
@@ -85,11 +84,16 @@ export default function ReviewSection() {
     setEditedComment(review.comment);
   };
 
-  const handleSaveEdit = (id) => {
-    // Here you would typically update the review in your backend
-    console.log('Saving edited review:', id, editedComment);
-    setEditingId(null);
-    setEditedComment("");
+  const handleSaveEdit = async (id) => {
+    try {
+      await reviewService.updateReview(id, { comment: editedComment });
+      await fetchReviews();
+      setEditingId(null);
+      setEditedComment("");
+    } catch (error) {
+      console.error('Error updating review:', error);
+      alert('Failed to update review');
+    }
   };
 
   const handleCancelEdit = () => {
@@ -97,10 +101,15 @@ export default function ReviewSection() {
     setEditedComment("");
   };
 
-  const handleDeleteReview = (id) => {
+  const handleDeleteReview = async (id) => {
     if (window.confirm('Are you sure you want to delete this review?')) {
-      console.log('Deleting review:', id);
-      // Add your delete logic here
+      try {
+        await reviewService.deleteReview(id);
+        await fetchReviews();
+      } catch (error) {
+        console.error('Error deleting review:', error);
+        alert('Failed to delete review');
+      }
     }
   };
 
