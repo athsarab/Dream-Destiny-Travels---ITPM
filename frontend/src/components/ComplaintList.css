@@ -34,6 +34,5 @@
 }
 
 .delete-button:hover {
-    background-color: #cc0000;
-    transform: scale(1.05);
+    background-color: #cc0#5200cc   transform: scale(1.05);
 }
