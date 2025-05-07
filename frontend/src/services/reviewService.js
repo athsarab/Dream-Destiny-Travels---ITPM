@@ -29,10 +29,15 @@ const reviewService = {
 
   updateReview: async (id, data) => {
     try {
-      const response = await axios.put(`${BASE_URL}/${id}`, data);
+      console.log('Updating review:', { id, data });
+      const response = await axios.put(`${BASE_URL}/${id}`, {
+        name: data.name,
+        country: data.country,
+        comment: data.comment
+      });
       return response;
     } catch (error) {
-      console.error('Error updating review:', error);
+      console.error('Update error:', error);
       throw error;
     }
   },

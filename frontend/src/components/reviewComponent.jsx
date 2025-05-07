@@ -79,14 +79,23 @@ export default function ReviewSection() {
   };
 
   const handleEditReview = (id) => {
-    const review = reviews.find(r => r.id === id);
-    setEditingId(id);
-    setEditedComment(review.comment);
+    console.log('Editing review with ID:', id);
+    const review = reviews.find(r => r._id === id);
+    if (review) {
+      setEditingId(id);
+      setEditedComment(review.comment);
+    }
   };
 
   const handleSaveEdit = async (id) => {
     try {
-      await reviewService.updateReview(id, { comment: editedComment });
+      console.log('Saving edit for review:', id);
+      const reviewToUpdate = reviews.find(r => r._id === id);
+      await reviewService.updateReview(id, {
+        name: reviewToUpdate.name,
+        country: reviewToUpdate.country,
+        comment: editedComment
+      });
       await fetchReviews();
       setEditingId(null);
       setEditedComment("");
@@ -221,18 +230,18 @@ export default function ReviewSection() {
         {/* Review Cards - Premium Style with Blue Theme & Yellow Stars */}
         <div className="space-y-6">
           {filteredReviews.map((review) => (
-            <div key={review.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
+            <div key={review._id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
               <div className="flex justify-between items-start flex-wrap mb-4">
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleEditReview(review.id)}
+                    onClick={() => handleEditReview(review._id)}
                     className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
                     title="Edit review"
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => handleDeleteReview(review.id)}
+                    onClick={() => handleDeleteReview(review._id)}
                     className="p-1.5 text-red-600 hover:bg-red-50 rounded-full transition-colors"
                     title="Delete review"
                   >
@@ -273,7 +282,7 @@ export default function ReviewSection() {
                 </div>
               </div>
               
-              {editingId === review.id ? (
+              {editingId === review._id ? (
                 <div className="mt-4">
                   <textarea
                     value={editedComment}
@@ -289,7 +298,7 @@ export default function ReviewSection() {
                       Cancel
                     </button>
                     <button
-                      onClick={() => handleSaveEdit(review.id)}
+                      onClick={() => handleSaveEdit(review._id)}
                       className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm hover:shadow-md transition-all text-sm"
                     >
                       Save Changes
