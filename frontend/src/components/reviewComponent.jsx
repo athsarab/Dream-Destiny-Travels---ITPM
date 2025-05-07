@@ -49,27 +49,40 @@ export default function ReviewSection() {
     }
   };
 
-  const filteredReviews = activeTab === "all" 
-    ? reviews 
-    : reviews.filter(review => review.type === activeTab);
+  const getFilteredReviews = () => {
+    if (activeTab === "all") return reviews;
+    return reviews.filter(review => review.type === activeTab);
+  };
+
+  const filteredReviews = getFilteredReviews();
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     try {
       const formData = {
-        reviewerName: e.target.querySelector('input[placeholder="John Doe"]').value,
-        reviewerCountry: e.target.querySelector('input[placeholder="United States"]').value,
-        comment: e.target.querySelector('textarea').value
+        name: e.target.querySelector('input[placeholder="John Doe"]').value,
+        country: e.target.querySelector('input[placeholder="United States"]').value,
+        comment: e.target.querySelector('textarea').value,
+        rating: rating,
+        type: reviewType
       };
 
-      await reviewService.createReview(formData);
-      await fetchReviews();
-      setShowReviewForm(false);
-      setRating(0);
-      alert('Review submitted successfully!');
+      if (!formData.name || !formData.country || !formData.comment || !rating || !reviewType) {
+        alert('Please fill all required fields');
+        return;
+      }
+
+      const response = await reviewService.createReview(formData);
+      if (response.data) {
+        await fetchReviews();
+        setShowReviewForm(false);
+        setRating(0);
+        setReviewType('hotel');
+        alert('Review submitted successfully!');
+      }
     } catch (error) {
       console.error('Error submitting review:', error);
-      alert('Failed to submit review');
+      alert('Failed to submit review: ' + (error.response?.data?.msg || error.message));
     }
   };
 
@@ -89,12 +102,13 @@ export default function ReviewSection() {
 
   const handleSaveEdit = async (id) => {
     try {
-      console.log('Saving edit for review:', id);
       const reviewToUpdate = reviews.find(r => r._id === id);
       await reviewService.updateReview(id, {
         name: reviewToUpdate.name,
         country: reviewToUpdate.country,
-        comment: editedComment
+        comment: editedComment,
+        type: reviewToUpdate.type, // Preserve the review type
+        rating: reviewToUpdate.rating // Preserve the rating
       });
       await fetchReviews();
       setEditingId(null);

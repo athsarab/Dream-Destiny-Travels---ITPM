@@ -16,9 +16,11 @@ const reviewService = {
   createReview: async (data) => {
     try {
       const response = await axios.post(`${BASE_URL}/`, {
-        name: data.reviewerName,
-        country: data.reviewerCountry,
-        comment: data.comment
+        name: data.name,
+        country: data.country,
+        comment: data.comment,
+        type: data.type,
+        rating: data.rating
       });
       return response;
     } catch (error) {
