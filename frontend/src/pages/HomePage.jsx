@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import VideoBackground from '../components/Shared/VideoBackground';
+import WeatherAlert from '../components/Weather/WeatherAlert';
+
 
 import { FiSearch, FiMapPin, FiClock, FiDollarSign, FiStar } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -196,6 +198,15 @@ const HomePage = () => {
                             <span>{pkg.duration} days</span>
                           </div>
                         </div>
+
+                                                {/* Weather Alert */}
+                                                {pkg.location && (
+                          <div className="mb-4">
+                            <WeatherAlert location={pkg.location} travelDate={new Date()} />
+                          </div>
+                        )}
+
+
                         
                         <Link
                           to={`/package/${pkg._id}`}
@@ -264,7 +275,14 @@ const HomePage = () => {
                               <FiClock className="mr-1" /> {pkg.duration} days
                             </span>
                           </div>
-                          
+
+                                                  {/* Weather Alert */}
+                        {pkg.location && (
+                          <div className="mb-4">
+                            <WeatherAlert location={pkg.location} travelDate={new Date()} />
+                          </div>
+                        )}
+            
                           <div className="flex justify-between items-center">
                             <span className="text-primary-400 font-bold">${pkg.price.toLocaleString()}</span>
                             <Link

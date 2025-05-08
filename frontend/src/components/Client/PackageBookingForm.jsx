@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import api from '../../services/api';  // Update import to use api service
+import api from '../../services/api';
+import WeatherAlert from '../Weather/WeatherAlert';
 
 const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -40,6 +41,14 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-dark-200 rounded-xl p-6 w-full max-w-md">
         <h2 className="text-2xl font-bold text-white mb-6">Book Package: {packageDetails.name}</h2>
+        
+        {/* Add Weather Alert based on location */}
+        {packageDetails.location && (
+          <WeatherAlert
+            location={packageDetails.location}
+            travelDate={formData.travelDate}
+          />
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
