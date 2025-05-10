@@ -15,8 +15,12 @@ const PackagePage = () => {
   useEffect(() => {
     const fetchPackage = async () => {
       try {
-        const response = await api.getPackage(id); // Changed from getPackageById to getPackage
-        setPackage(response.data);
+        const response = await api.getPackage(id);
+        if (response && response.data) {
+          setPackage(response.data);
+        } else {
+          setError('Package not found or data is invalid');
+        }
         setLoading(false);
       } catch (error) {
         console.error('Error fetching package:', error);
@@ -30,22 +34,27 @@ const PackagePage = () => {
 
   const handleBooking = async (bookingData) => {
     try {
+      // The form already handles the API call
       setShowBookingForm(false); // Close form first
-      navigate('/', { state: { message: 'Booking submitted successfully!' } });
+      navigate('/', { state: { 
+        success: true,
+        message: 'Booking request submitted successfully! The admin will review your request.' 
+      }});
     } catch (error) {
       console.error('Error submitting booking:', error);
       alert('Failed to submit booking: ' + (error.response?.data?.message || 'Please try again'));
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
-  if (!package_) return <div>Package not found</div>;
+  if (loading) return <div className="p-6 text-white">Loading...</div>;
+  if (error) return <div className="p-6 text-red-400">{error}</div>;
+  if (!package_ || typeof package_ !== 'object') return <div className="p-6 text-white">Package not found</div>;
 
   return (
     <div className="bg-dark-100 text-white p-6 pt-24 min-h-screen overflow-y-auto">
       <div className="max-w-4xl mx-auto bg-dark-200 rounded-xl shadow-lg overflow-hidden mb-6">
-        <h1 className="text-3xl font-bold p-6 border-b border-dark-300">{package_.name}</h1>
+
+        <h1 className="text-3xl font-bold p-6 border-b border-dark-300">{package_.name || 'Unnamed Package'}</h1>
         
         {/* Add Weather Alert */}
         {package_ && package_.location && (
@@ -56,12 +65,15 @@ const PackagePage = () => {
             />
           </div>
         )}
-        
         {package_.imageUrl && (
           <img 
-            src={`http://localhost:5000${package_.imageUrl}`} 
-            alt={package_.name} 
-            className="w-full h-96 object-cover"
+            src={package_.imageUrl} 
+            alt={package_.name || 'Package image'} 
+            className="w-full h-64 object-cover"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/images/placeholder.jpg';
+            }}
           />
         )}
         <div className="p-6">

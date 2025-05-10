@@ -29,9 +29,26 @@ exports.getPackage = async (req, res) => {
 exports.createPackage = async (req, res) => {
     try {
         const packageData = req.body;
+        
+        // Validate required fields
+        if (!packageData.name || !packageData.description || !packageData.price) {
+            return res.status(400).json({ 
+                message: 'Missing required fields. Name, description, and price are required.'
+            });
+        }
+
+        // Validate price is a number
+        if (isNaN(packageData.price)) {
+            return res.status(400).json({ 
+                message: 'Price must be a valid number'
+            });
+        }
+
         if (req.file) {
-            // Store the path relative to the uploads directory
-            packageData.imageUrl = `/uploads/${req.file.filename}`;
+            // Store the complete URL for the image
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            packageData.imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+            console.log('Full image URL saved:', packageData.imageUrl);
         }
         
         const package = new Package(packageData);
@@ -42,7 +59,16 @@ exports.createPackage = async (req, res) => {
         if (req.file) {
             await fs.unlink(req.file.path).catch(() => {});
         }
-        res.status(400).json({ message: error.message });
+        
+        // Send more descriptive error message
+        const errorMessage = error.code === 11000 
+            ? 'A package with this name already exists'
+            : error.message;
+            
+        res.status(400).json({ 
+            message: 'Failed to create package',
+            error: errorMessage
+        });
     }
 };
 
@@ -62,8 +88,8 @@ exports.updatePackage = async (req, res) => {
                 const oldImagePath = path.join(__dirname, '..', oldPackage.imageUrl);
                 await fs.unlink(oldImagePath).catch(() => {});
             }
-            // Store the new image path
-            packageData.imageUrl = `/uploads/${req.file.filename}`;
+            // Update to use absolute URL path
+            packageData.imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
         }
 
         const package = await Package.findByIdAndUpdate(

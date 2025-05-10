@@ -10,9 +10,14 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
     travelDate: '',
     numberOfPeople: 1
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+    
     try {
       const bookingData = {
         ...formData,
@@ -27,13 +32,14 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
       const response = await api.submitPackageBooking(bookingData);
       
       if (response.data) {
-        alert('Booking submitted successfully!');
+        alert('Booking request submitted successfully! The admin will review your request.');
         onSubmit(response.data); // Pass the booking data to parent
-        onCancel(); // Close the form
       }
     } catch (error) {
       console.error('Error details:', error);
-      alert('Failed to submit booking: ' + (error.response?.data?.message || 'Please try again'));
+      setError(error.response?.data?.message || 'Failed to submit booking. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -74,14 +80,23 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
           </div>
           
           <div>
-            <label className="block text-white mb-2">Phone Number</label>
+            <label className="block text-white mb-2">Phone Number (with country code)</label>
             <input
               type="tel"
               required
+              placeholder="e.g., +94771234567"
               value={formData.phoneNumber}
-              onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+              onChange={(e) => {
+                  let value = e.target.value;
+                  // Ensure phone number starts with +
+                  if (!value.startsWith('+')) {
+                      value = '+' + value;
+                  }
+                  setFormData({...formData, phoneNumber: value})
+              }}
               className="w-full p-3 rounded-lg bg-dark-300 text-white"
             />
+            <small className="text-gray-400">Include country code (e.g., +94 for Sri Lanka)</small>
           </div>
           
           <div>
@@ -120,14 +135,16 @@ const PackageBookingForm = ({ packageDetails, onSubmit, onCancel }) => {
               type="button"
               onClick={onCancel}
               className="flex-1 bg-dark-300 text-white py-3 rounded-lg hover:bg-dark-400"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
+              disabled={isSubmitting}
               className="flex-1 bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700"
             >
-              Confirm Booking
+              {isSubmitting ? 'Submitting...' : 'Confirm Booking'}
             </button>
           </div>
         </form>

@@ -11,27 +11,90 @@ import { motion } from 'framer-motion';
 const HomePage = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
  
   useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const response = await api.getPackages();
-        setPackages(response.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching packages:', error);
-        setLoading(false);
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Initiating package fetch...');
+      
+      // Try to get server health first
+      const isServerHealthy = await api.checkHealth();
+      if (!isServerHealthy) {
+        console.warn('Server health check failed - attempting to fetch packages anyway');
       }
-    };
-    fetchPackages();
-  }, []);
+      
+      const response = await api.getPackages();
+      console.log('Package fetch successful from ' + response.source);
+      
+      if (response.data && Array.isArray(response.data)) {
+        setPackages(response.data);
+      } else {
+        console.warn('Received unexpected data format:', response.data);
+        setPackages([]);
+        setError('Received invalid data from server');
+      }
+    } catch (error) {
+      console.error('Package fetch error:', {
+        message: error.message,
+        stack: error.stack
+      });
+      setError(error.message || 'Failed to load packages. Please try again later.');
+      setPackages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredPackages = packages.filter(pkg =>
-    pkg.name.toLowerCase().includes(search.toLowerCase()) ||
-    pkg.location.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    fetchPackages();
+    
+    // Add recovery mechanism - if failed, try again in 5 seconds (but only once)
+    const retryTimeout = setTimeout(() => {
+      if (error) {
+        console.log('Attempting automatic retry after error...');
+        fetchPackages();
+      }
+    }, 5000);
+    
+    return () => clearTimeout(retryTimeout);
+  }, [error]);
+
+  // Add more robust filtering with null checks
+  const filteredPackages = packages && packages.filter ? 
+    packages.filter(pkg => 
+      pkg && 
+      pkg.name && 
+      pkg.location &&
+      (pkg.name.toLowerCase().includes(search.toLowerCase()) || 
+       pkg.location.toLowerCase().includes(search.toLowerCase()))
+    ) : [];
+
+  // Show empty state when no packages or error
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+    </div>;
+  }
+
+  if (error) {
+    return <div className="flex justify-center items-center min-h-screen">
+      <div className="text-red-500 text-center">
+        <p className="text-xl font-semibold mb-2">Error Loading Packages</p>
+        <p>{error}</p>
+        <button 
+          onClick={fetchPackages}
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Try Again
+        </button>
+      </div>
+    </div>;
+  }
 
   // Categories for filtering
   const categories = ['all', 'beach', 'mountain', 'cultural', 'adventure'];
@@ -65,7 +128,6 @@ const HomePage = () => {
         <VideoBackground />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70"></div>
       </div>
-
       <div className="relative z-10">
         {/* Hero Section */}
         <div className="container mx-auto px-4 py-32">
@@ -140,164 +202,169 @@ const HomePage = () => {
             </div>
           ) : (
             <>
-              {/* Featured Section */}
-              <motion.section 
-                className="mb-20"
-                initial="hidden"
-                animate="visible"
-                variants={containerVariants}
-              >
-                <motion.h2 
-                  className="text-3xl font-semibold text-white mb-8 text-center"
-                  variants={itemVariants}
-                >
-                  <span className="border-b-2 border-primary-500 pb-2">Featured</span> Packages
-                </motion.h2>
-                
-                <motion.div 
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                  variants={containerVariants}
-                >
-                  {filteredPackages.slice(0, 3).map(pkg => (
-                    <motion.div 
-                      key={pkg._id} 
-                      className="group relative bg-white/5 backdrop-blur-md rounded-xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 border border-white/10"
-                      whileHover={{ y: -10 }}
-                      variants={itemVariants}
-                    >
-                      {pkg.imageUrl && (
-                        <div className="w-full h-60 overflow-hidden">
-                          <img 
-                            src={`http://localhost:5000${pkg.imageUrl}`}
-                            alt={pkg.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        </div>
-                      )}
-                      <div className="p-6">
-                        <div className="flex justify-between items-start mb-3">
-                          <h3 className="text-xl font-semibold text-white">{pkg.name}</h3>
-                          {pkg.isFeatured && (
-                            <span className="flex items-center bg-primary-500/20 text-primary-300 px-2 py-1 rounded text-sm">
-                              <FiStar className="mr-1" /> Featured
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-3 mb-6 text-gray-300">
-                          <div className="flex items-center">
-                            <FiMapPin className="mr-2 text-primary-400" />
-                            <span>{pkg.location}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <FiDollarSign className="mr-2 text-primary-400" />
-                            <span className="font-medium text-white">From ${pkg.price.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <FiClock className="mr-2 text-primary-400" />
-                            <span>{pkg.duration} days</span>
-                          </div>
-                        </div>
+{/* Featured Section */}
+<motion.section 
+  className="mb-20"
+  initial="hidden"
+  animate="visible"
+  variants={containerVariants}
+>
+  <motion.h2 
+    className="text-3xl font-semibold text-white mb-8 text-center"
+    variants={itemVariants}
+  >
+    <span className="border-b-2 border-primary-500 pb-2">Featured</span> Packages
+  </motion.h2>
+  
+  <motion.div 
+    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+    variants={containerVariants}
+  >
+    {filteredPackages.slice(0, 3).map(pkg => (
+      <motion.div 
+        key={pkg._id} 
+        className="group relative bg-white/5 backdrop-blur-md rounded-xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 border border-white/10"
+        whileHover={{ y: -10 }}
+        variants={itemVariants}
+      >
+        {pkg.imageUrl ? (
+          <div className="w-full h-60 overflow-hidden">
+            <img 
+              src={`http://localhost:5000${pkg.imageUrl}`}
+              alt={pkg.name || "Package image"}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/images/placeholder.jpg";
+              }}
+            />
+          </div>
+        ) : null}
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="text-xl font-semibold text-white">{pkg.name || "Unnamed Package"}</h3>
+            {pkg.isFeatured && (
+              <span className="flex items-center bg-primary-500/20 text-primary-300 px-2 py-1 rounded text-sm">
+                <FiStar className="mr-1" /> Featured
+              </span>
+            )}
+          </div>
+          
+          <div className="space-y-3 mb-6 text-gray-300">
+            <div className="flex items-center">
+              <FiMapPin className="mr-2 text-primary-400" />
+              <span>{pkg.location || "N/A"}</span>
+            </div>
+            <div className="flex items-center">
+              <FiDollarSign className="mr-2 text-primary-400" />
+              <span className="font-medium text-white">From ${pkg.price?.toLocaleString() || "0"}</span>
+            </div>
+            <div className="flex items-center">
+              <FiClock className="mr-2 text-primary-400" />
+              <span>{pkg.duration || "N/A"} days</span>
+            </div>
+          </div>
 
-                                                {/* Weather Alert */}
-                                                {pkg.location && (
-                          <div className="mb-4">
-                            <WeatherAlert location={pkg.location} travelDate={new Date()} />
-                          </div>
-                        )}
+          {pkg.location && (
+            <div className="mb-4">
+              <WeatherAlert location={pkg.location} travelDate={new Date()} />
+            </div>
+          )}
 
+          <Link
+            to={`/package/${pkg._id}`}
+            className="block w-full text-center bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-3 rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all duration-300"
+          >
+            Explore Package
+          </Link>
+        </div>
+      </motion.div>
+    ))}
+  </motion.div>
+</motion.section>
 
-                        
-                        <Link
-                          to={`/package/${pkg._id}`}
-                          className="block w-full text-center bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-3 rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all duration-300"
-                        >
-                          Explore Package
-                        </Link>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </motion.section>
+{/* All Packages Section */}
+<motion.section 
+  className="mb-16"
+  initial="hidden"
+  animate="visible"
+  variants={containerVariants}
+>
+  <motion.h2 
+    className="text-3xl font-semibold text-white mb-8 text-center"
+    variants={itemVariants}
+  >
+    <span className="border-b-2 border-primary-500 pb-2">Explore</span> All Destinations
+  </motion.h2>
+  
+  {filteredPackages.length === 0 ? (
+    <motion.div 
+      className="text-center text-gray-300 py-12"
+      variants={itemVariants}
+    >
+      <p className="text-xl">No packages found matching your search.</p>
+      <p>Try a different search term or browse our featured packages.</p>
+    </motion.div>
+  ) : (
+    <motion.div 
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+      variants={containerVariants}
+    >
+      {filteredPackages.map(pkg => (
+        <motion.div 
+          key={pkg._id} 
+          className="group relative bg-white/5 backdrop-blur-md rounded-xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 border border-white/10"
+          whileHover={{ y: -5 }}
+          variants={itemVariants}
+        >
+          {pkg.imageUrl ? (
+            <div className="w-full h-52 overflow-hidden relative">
+              <img 
+                src={`http://localhost:5000${pkg.imageUrl}`}
+                alt={pkg.name || "Package image"}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/images/placeholder.jpg";
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+            </div>
+          ) : null}
 
-              {/* All Packages Section */}
-              <motion.section 
-                className="mb-16"
-                initial="hidden"
-                animate="visible"
-                variants={containerVariants}
-              >
-                <motion.h2 
-                  className="text-3xl font-semibold text-white mb-8 text-center"
-                  variants={itemVariants}
-                >
-                  <span className="border-b-2 border-primary-500 pb-2">Explore</span> All Destinations
-                </motion.h2>
-                
-                {filteredPackages.length === 0 ? (
-                  <motion.div 
-                    className="text-center text-gray-300 py-12"
-                    variants={itemVariants}
-                  >
-                    <p className="text-xl">No packages found matching your search.</p>
-                    <p>Try a different search term or browse our featured packages.</p>
-                  </motion.div>
-                ) : (
-                  <motion.div 
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
-                    variants={containerVariants}
-                  >
-                    {filteredPackages.map(pkg => (
-                      <motion.div 
-                        key={pkg._id} 
-                        className="group relative bg-white/5 backdrop-blur-md rounded-xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 border border-white/10"
-                        whileHover={{ y: -5 }}
-                        variants={itemVariants}
-                      >
-                        {pkg.imageUrl && (
-                          <div className="w-full h-52 overflow-hidden relative">
-                            <img 
-                              src={`http://localhost:5000${pkg.imageUrl}`}
-                              alt={pkg.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                          </div>
-                        )}
-                        <div className="p-5">
-                          <h3 className="text-lg font-semibold text-white mb-2">{pkg.name}</h3>
-                          
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            <span className="flex items-center text-xs bg-white/10 text-gray-200 px-2 py-1 rounded">
-                              <FiMapPin className="mr-1" /> {pkg.location}
-                            </span>
-                            <span className="flex items-center text-xs bg-white/10 text-gray-200 px-2 py-1 rounded">
-                              <FiClock className="mr-1" /> {pkg.duration} days
-                            </span>
-                          </div>
-
-                                                  {/* Weather Alert */}
-                        {pkg.location && (
-                          <div className="mb-4">
-                            <WeatherAlert location={pkg.location} travelDate={new Date()} />
-                          </div>
-                        )}
+          <div className="p-5">
+            <h3 className="text-lg font-semibold text-white mb-2">{pkg.name || "Unnamed Package"}</h3>
             
-                          <div className="flex justify-between items-center">
-                            <span className="text-primary-400 font-bold">${pkg.price.toLocaleString()}</span>
-                            <Link
-                              to={`/package/${pkg._id}`}
-                              className="text-sm text-white hover:text-primary-300 transition-colors flex items-center"
-                            >
-                              Details <span className="ml-1">→</span>
-                            </Link>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </motion.section>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className="flex items-center text-xs bg-white/10 text-gray-200 px-2 py-1 rounded">
+                <FiMapPin className="mr-1" /> {pkg.location || "N/A"}
+              </span>
+              <span className="flex items-center text-xs bg-white/10 text-gray-200 px-2 py-1 rounded">
+                <FiClock className="mr-1" /> {pkg.duration || "N/A"} days
+              </span>
+            </div>
+
+            {pkg.location && (
+              <div className="mb-4">
+                <WeatherAlert location={pkg.location} travelDate={new Date()} />
+              </div>
+            )}
+
+            <div className="flex justify-between items-center">
+              <span className="text-primary-400 font-bold">${pkg.price?.toLocaleString() || "0"}</span>
+              <Link
+                to={`/package/${pkg._id}`}
+                className="text-sm text-white hover:text-primary-300 transition-colors flex items-center"
+              >
+                Details <span className="ml-1">→</span>
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </motion.div>
+  )}
+</motion.section>
             </>
           )}
         </div>

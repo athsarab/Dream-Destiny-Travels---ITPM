@@ -36,9 +36,10 @@ const Navbar = () => {
                   <Link to="/packages" className="text-white/90 hover:text-primary-400 font-medium transition-colors duration-300">
                     Packages
                   </Link>
-
-                  <Link to="/Blog" className="text-white/90 hover:text-primary-400 font-medium transition-colors duration-300">
-                    Blogs
+                  <Link to="/Login1">
+                    <button className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600">
+                      Sign In
+                    </button>
                   </Link>
                   {userInfo && (
                     <div className="flex items-center space-x-4">
@@ -57,9 +58,6 @@ const Navbar = () => {
                   </Link>
                   <Link to="/admin/custom-packages" className="text-white/90 hover:text-primary-400 font-medium transition-colors duration-300">
                     Custom Packages
-                  </Link>
-                  <Link to="/admin/resources" className="text-white/90 hover:text-primary-400 font-medium transition-colors duration-300">
-                    Resource Management
                   </Link>
                   <Link to="/" className="px-4 py-2 bg-primary-600/80 hover:bg-primary-600 text-white rounded-full transition-all duration-300 backdrop-blur-sm">
                     Logout

@@ -6,7 +6,7 @@ const customPackageBookingSchema = new mongoose.Schema({
         required: [true, 'Customer name is required'],
         trim: true
     },
-    email: {
+    email: { 
         type: String,
         required: [true, 'Email is required'],
         trim: true,

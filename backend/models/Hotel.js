@@ -16,22 +16,41 @@ const hotelSchema = new mongoose.Schema({
         required: [true, 'Number of available rooms is required'],
         min: [0, 'Available rooms cannot be negative']
     },
-    pricePerNight: {
-        type: Number,
-        required: [true, 'Price per night is required'],
-        min: [0, 'Price cannot be negative']
+    roomTypes: {
+        type: [String],
+        required: [true, 'Room types are required'],
+        validate: {
+            validator: function(v) {
+                return v.length > 0;
+            },
+            message: 'At least one room type must be selected'
+        }
     },
-    roomType: {
-        type: String,
-        required: [true, 'Room type is required'],
-        enum: ['single', 'double', 'suite', 'deluxe']
+    roomQuantities: {
+        type: Map,
+        of: Number,
+        default: {},
+        validate: {
+            validator: function(v) {
+                // Ensure each room type has a quantity
+                if (!this.roomTypes) return false;
+                return this.roomTypes.every(type => v.get(type) >= 0);
+            },
+            message: 'Each room type must have a quantity specified'
+        }
     },
-    facilities: {
-        type: [{
-            type: String,
-            trim: true
-        }],
-        default: []
+    roomPrices: {
+        type: Map,
+        of: Number,
+        required: [true, 'Room prices are required'],
+        validate: {
+            validator: function(v) {
+                // At least one price for each room type
+                if (!this.roomTypes) return false;
+                return this.roomTypes.every(type => v.get(type) > 0);
+            },
+            message: 'A price must be set for each room type'
+        }
     },
     contactNumber: {
         type: String,
@@ -45,14 +64,6 @@ const hotelSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
-});
-
-// Add pre-save middleware to ensure facilities is an array
-hotelSchema.pre('save', function(next) {
-    if (!Array.isArray(this.facilities)) {
-        this.facilities = [];
-    }
-    next();
 });
 
 module.exports = mongoose.model('Hotel', hotelSchema);
