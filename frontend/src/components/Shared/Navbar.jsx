@@ -36,7 +36,7 @@ const Navbar = () => {
                   <Link to="/packages" className="text-white/90 hover:text-primary-400 font-medium transition-colors duration-300">
                     Packages
                   </Link>
-                  <Link to="/auth">
+                  <Link to="/Login1">
                     <button className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600">
                       Sign In
                     </button>

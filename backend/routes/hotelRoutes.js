@@ -43,27 +43,82 @@ router.post('/', async (req, res) => {
     try {
         console.log('Received hotel data:', req.body);
 
-        // Data validation
-        const hotel = new Hotel(req.body);
-        const validationError = hotel.validateSync();
+        // 1. Validate required fields
+        const requiredFields = ['name', 'location', 'contactNumber', 'roomTypes', 'roomPrices', 'roomQuantities'];
+        const missingFields = requiredFields.filter(field => !req.body[field]);
         
-        if (validationError) {
-            console.log('Validation errors:', validationError.errors);
+        if (missingFields.length > 0) {
             return res.status(400).json({
-                message: 'Validation failed',
-                errors: Object.values(validationError.errors).map(err => err.message)
+                message: `Missing required fields: ${missingFields.join(', ')}`
             });
         }
 
+        // 2. Phone number validation
+        const phoneRegex = /^\d{10}$/;
+        if (!phoneRegex.test(req.body.contactNumber)) {
+            return res.status(400).json({
+                message: 'Contact number must be exactly 10 digits'
+            });
+        }
+
+        // 3. Room types validation
+        if (!Array.isArray(req.body.roomTypes) || req.body.roomTypes.length === 0) {
+            return res.status(400).json({
+                message: 'At least one room type must be selected'
+            });
+        }
+
+        // 4. Room prices validation - ensure every room type has a price
+        const roomPrices = req.body.roomPrices;
+        const missingPrices = req.body.roomTypes.filter(type => 
+            !roomPrices[type] || parseFloat(roomPrices[type]) <= 0
+        );
+        
+        if (missingPrices.length > 0) {
+            return res.status(400).json({
+                message: `Missing or invalid prices for room types: ${missingPrices.join(', ')}`
+            });
+        }
+
+        // 5. Room quantities validation - ensure every room type has a quantity
+        const roomQuantities = req.body.roomQuantities;
+        const missingQuantities = req.body.roomTypes.filter(type => 
+            !roomQuantities[type] || parseInt(roomQuantities[type]) < 0
+        );
+        
+        if (missingQuantities.length > 0) {
+            return res.status(400).json({
+                message: `Missing or invalid quantities for room types: ${missingQuantities.join(', ')}`
+            });
+        }
+
+        // Calculate total available rooms
+        const totalRooms = Object.values(roomQuantities).reduce(
+            (sum, quantity) => sum + parseInt(quantity), 0
+        );
+
+        // 6. Data type validation and conversion
+        const hotelData = {
+            name: req.body.name.trim(),
+            location: req.body.location.trim(),
+            availableRooms: totalRooms,
+            roomTypes: req.body.roomTypes,
+            roomPrices: req.body.roomPrices, // Store as Map in MongoDB
+            roomQuantities: req.body.roomQuantities,
+            contactNumber: req.body.contactNumber.trim(),
+            status: 'available'
+        };
+
+        // 7. Create and save hotel
+        const hotel = new Hotel(hotelData);
         const savedHotel = await hotel.save();
-        console.log('Hotel saved:', savedHotel);
+        console.log('Hotel saved successfully:', savedHotel);
         res.status(201).json(savedHotel);
     } catch (error) {
         console.error('Error creating hotel:', error);
         res.status(400).json({
             message: 'Failed to create hotel',
-            error: error.message,
-            details: error.errors || error
+            error: error.message
         });
     }
 });
@@ -72,49 +127,87 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        console.log('Update request for hotel ID:', id);
-        console.log('Update data received:', req.body);
-
+        
+        // Validate ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ message: 'Invalid hotel ID format' });
         }
 
-        // Validate required fields
-        const requiredFields = ['name', 'location', 'roomType', 'contactNumber'];
-        const missingFields = requiredFields.filter(field => !req.body[field]);
-        if (missingFields.length > 0) {
+        // Phone validation
+        const { contactNumber } = req.body;
+        const phoneRegex = /^\d{10}$/;
+        if (!contactNumber || !phoneRegex.test(contactNumber)) {
+            return res.status(400).json({ message: 'Contact number must be exactly 10 digits' });
+        }
+
+        // Room types validation
+        if (!req.body.roomTypes || !Array.isArray(req.body.roomTypes) || req.body.roomTypes.length === 0) {
+            return res.status(400).json({ message: 'At least one room type must be selected' });
+        }
+
+        // Room prices validation - ensure every room type has a price
+        const roomPrices = req.body.roomPrices || {};
+        const missingPrices = req.body.roomTypes.filter(type => 
+            !roomPrices[type] || parseFloat(roomPrices[type]) <= 0
+        );
+        
+        if (missingPrices.length > 0) {
             return res.status(400).json({
-                message: `Missing required fields: ${missingFields.join(', ')}`
+                message: `Missing or invalid prices for room types: ${missingPrices.join(', ')}`
             });
         }
 
-        // Prepare update data with proper type conversion
-        const updateData = {
-            name: req.body.name,
-            location: req.body.location,
-            availableRooms: Math.max(0, parseInt(req.body.availableRooms) || 0),
-            pricePerNight: Math.max(0, parseFloat(req.body.pricePerNight) || 0),
-            roomType: req.body.roomType,
-            contactNumber: req.body.contactNumber,
-            facilities: Array.isArray(req.body.facilities) ? req.body.facilities : [],
-            status: req.body.status || 'available'
-        };
+        // Room quantities validation
+        const roomQuantities = req.body.roomQuantities || {};
+        const missingQuantities = req.body.roomTypes.filter(type => 
+            roomQuantities[type] === undefined || parseInt(roomQuantities[type]) < 0
+        );
+        
+        if (missingQuantities.length > 0) {
+            return res.status(400).json({
+                message: `Missing or invalid quantities for room types: ${missingQuantities.join(', ')}`
+            });
+        }
 
-        const updatedHotel = await Hotel.findByIdAndUpdate(
-            id,
-            updateData,
-            { 
-                new: true, 
-                runValidators: true,
-                context: 'query' 
-            }
+        // Calculate total available rooms
+        const totalRooms = Object.values(roomQuantities).reduce(
+            (sum, quantity) => sum + parseInt(quantity), 0
         );
 
-        if (!updatedHotel) {
+        // Find the hotel first to apply an update that will pass validation
+        const hotel = await Hotel.findById(id);
+        if (!hotel) {
             return res.status(404).json({ message: 'Hotel not found' });
         }
 
-        console.log('Hotel updated successfully:', updatedHotel);
+        // First update the roomTypes which will be referenced by the validation
+        hotel.roomTypes = req.body.roomTypes;
+        
+        // Create objects for prices and quantities
+        const pricesObject = {};
+        const quantitiesObject = {};
+        
+        req.body.roomTypes.forEach(type => {
+            if (roomPrices[type]) {
+                pricesObject[type] = parseFloat(roomPrices[type]);
+            }
+            if (roomQuantities[type] !== undefined) {
+                quantitiesObject[type] = parseInt(roomQuantities[type]);
+            }
+        });
+        
+        // Update hotel fields
+        hotel.roomPrices = pricesObject;
+        hotel.roomQuantities = quantitiesObject;
+        hotel.name = req.body.name;
+        hotel.location = req.body.location;
+        hotel.availableRooms = totalRooms;
+        hotel.contactNumber = req.body.contactNumber;
+        hotel.status = req.body.status || 'available';
+        
+        // Save the updated hotel
+        const updatedHotel = await hotel.save();
+
         res.json(updatedHotel);
     } catch (error) {
         console.error('Error updating hotel:', error);

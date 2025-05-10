@@ -33,8 +33,12 @@ const PackagePage = () => {
 
   const handleBooking = async (bookingData) => {
     try {
+      // The form already handles the API call
       setShowBookingForm(false); // Close form first
-      navigate('/', { state: { message: 'Booking submitted successfully!' } });
+      navigate('/', { state: { 
+        success: true,
+        message: 'Booking request submitted successfully! The admin will review your request.' 
+      }});
     } catch (error) {
       console.error('Error submitting booking:', error);
       alert('Failed to submit booking: ' + (error.response?.data?.message || 'Please try again'));

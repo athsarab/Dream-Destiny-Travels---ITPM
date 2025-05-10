@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const Employee = require('../models/Employee');
 
+// Define role-based salary limits
+const SALARY_LIMITS = {
+  'Driver': 500,
+  'Travel Agent': 1200,
+  'Supplier': 450,
+  'Worker': 350
+};
+
 // Debug middleware for tracking requests
 router.use((req, res, next) => {
     console.log(`Employee API Request: ${req.method} ${req.url}`);
@@ -11,7 +19,7 @@ router.use((req, res, next) => {
 // Get all employees
 router.get('/', async (req, res) => {
     try {
-        const employees = await Employee.find();
+        const employees = await Employee.find().sort('-createdAt'); // Add sorting
         res.json(employees);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -56,27 +64,68 @@ router.get('/:id', async (req, res) => {
 // Add new employee
 router.post('/', async (req, res) => {
     try {
-        // Log the received data for debugging
-        console.log('Received employee data:', req.body);
-        
-        const employee = new Employee({
-            name: req.body.name,
-            employeeId: req.body.employeeId,
-            email: req.body.email,
-            phoneNumber: req.body.phoneNumber,
-            role: req.body.role,  // Changed from position to role
-            salary: req.body.salary,
-            nic: req.body.nic
+        const { employeeId, phoneNumber, nic, email, salary, role } = req.body;
+
+        // Check for duplicates
+        const duplicateEmployee = await Employee.findOne({
+            $or: [
+                { employeeId: employeeId },
+                { phoneNumber: phoneNumber },
+                { nic: nic },
+                { email: email }
+            ]
         });
-        
-        const newEmployee = await employee.save();
-        console.log('Saved employee:', newEmployee); // Debug log
-        res.status(201).json(newEmployee);
+
+        if (duplicateEmployee) {
+            let duplicateField = '';
+            if (duplicateEmployee.employeeId === employeeId) duplicateField = 'Employee ID';
+            else if (duplicateEmployee.phoneNumber === phoneNumber) duplicateField = 'Phone Number';
+            else if (duplicateEmployee.nic === nic) duplicateField = 'NIC';
+            else if (duplicateEmployee.email === email) duplicateField = 'Email';
+
+            return res.status(400).json({
+                message: `${duplicateField} already exists. Please use a different ${duplicateField.toLowerCase()}.`
+            });
+        }
+
+        // Role-based salary validation
+        if (role && SALARY_LIMITS[role]) {
+            const maxSalary = SALARY_LIMITS[role];
+            if (salary > maxSalary) {
+                return res.status(400).json({ 
+                    message: `Salary for ${role} cannot exceed $${maxSalary}` 
+                });
+            }
+        } else if (salary > 2500) {
+            // Global max if role doesn't have a specific limit
+            return res.status(400).json({ 
+                message: 'Salary cannot exceed $2,500' 
+            });
+        }
+
+        if (salary <= 0) {
+            return res.status(400).json({ 
+                message: 'Salary must be greater than 0' 
+            });
+        }
+
+        // Phone number validation
+        const phoneRegex = /^\d{10}$/;
+        if (!phoneRegex.test(phoneNumber)) {
+            return res.status(400).json({ 
+                message: 'Phone number must be exactly 10 digits' 
+            });
+        }
+
+        // Create new employee
+        const employee = new Employee(req.body);
+        const savedEmployee = await employee.save();
+        res.status(201).json(savedEmployee);
     } catch (error) {
-        console.error('Error saving employee:', error); // Debug log
+        console.error('Error saving employee:', error);
         res.status(400).json({ 
             message: error.message,
-            details: error.errors // Include validation errors if any
+            details: error.errors
         });
     }
 });
@@ -84,6 +133,52 @@ router.post('/', async (req, res) => {
 // Update employee
 router.put('/:id', async (req, res) => {
     try {
+        const { employeeId, phoneNumber, nic, email, salary, role } = req.body;
+
+        // Check for duplicates excluding current employee
+        const duplicateEmployee = await Employee.findOne({
+            _id: { $ne: req.params.id },
+            $or: [
+                { employeeId: employeeId },
+                { phoneNumber: phoneNumber },
+                { nic: nic },
+                { email: email }
+            ]
+        });
+
+        if (duplicateEmployee) {
+            let duplicateField = '';
+            if (duplicateEmployee.employeeId === employeeId) duplicateField = 'Employee ID';
+            else if (duplicateEmployee.phoneNumber === phoneNumber) duplicateField = 'Phone Number';
+            else if (duplicateEmployee.nic === nic) duplicateField = 'NIC';
+            else if (duplicateEmployee.email === email) duplicateField = 'Email';
+
+            return res.status(400).json({
+                message: `${duplicateField} already exists. Please use a different ${duplicateField.toLowerCase()}.`
+            });
+        }
+
+        // Role-based salary validation
+        if (role && SALARY_LIMITS[role]) {
+            const maxSalary = SALARY_LIMITS[role];
+            if (salary > maxSalary) {
+                return res.status(400).json({ 
+                    message: `Salary for ${role} cannot exceed $${maxSalary}` 
+                });
+            }
+        } else if (salary > 2500) {
+            // Global max if role doesn't have a specific limit
+            return res.status(400).json({ 
+                message: 'Salary cannot exceed $2,500' 
+            });
+        }
+
+        if (salary <= 0) {
+            return res.status(400).json({ 
+                message: 'Salary must be greater than 0' 
+            });
+        }
+
         const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(employee);
     } catch (error) {

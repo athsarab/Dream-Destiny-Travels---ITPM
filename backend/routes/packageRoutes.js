@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Package = require('../models/Package'); // Add this line
+const mongoose = require('mongoose'); 
+const Package = require('../models/Package');
 const PackageBooking = require('../models/PackageBooking');
 const upload = require('../middleware/upload');
 const {
@@ -11,51 +12,51 @@ const {
     deletePackage
 } = require('../controllers/packageController');
 
-// Add health check endpoint at the top of the file
+// Health check endpoint
 router.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
 });
 
-// Debug middleware
+// Debug middleware - Keep only one instance
 router.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`, req.body);
+    console.log(`${new Date().toISOString()} [DEBUG] ${req.method} ${req.originalUrl}`);
     next();
 });
 
-// Booking routes should come before /:id routes to avoid conflict
-router.post('/bookings', async (req, res) => {
-    try {
-        console.log('Received booking data:', req.body); // Debug log
-        const booking = new PackageBooking(req.body);
-        const savedBooking = await booking.save();
-        res.status(201).json(savedBooking);
-    } catch (error) {
-        console.error('Booking error:', error);
-        res.status(400).json({ message: error.message });
-    }
+// Add specific debug route to test if the router is properly mounted
+router.get('/debug', (req, res) => {
+    res.status(200).json({
+        message: 'Package routes are working',
+        availableEndpoints: {
+            bookings: 'GET, POST, PUT /bookings/:id, DELETE /bookings/:id',
+            packages: 'GET, GET /:id, POST, PUT /:id, DELETE /:id',
+            health: 'GET /health',
+            debug: 'GET /debug'
+        }
+    });
 });
 
-// Make sure the populate is working correctly for packageId
+// Booking routes should come before /:id routes to avoid conflict
 router.get('/bookings', async (req, res) => {
     try {
         // Use lean() to get plain objects instead of Mongoose documents
-        const bookings = await PackageBooking.find()
-            .populate('packageId')
-            .sort('-createdAt')
-            .lean();
-            
-        // Add safeguard for null packageId
-        const safeBookings = bookings.map(booking => {
-            if (!booking.packageId) {
-                booking.packageId = { name: 'Unknown Package' };
-            }
-            return booking;
-        });
-        
-        res.json(safeBookings);
+        const bookings = await PackageBooking.find().lean();
+        res.status(200).json(bookings); // Fixed: Return bookings instead of savedBooking
     } catch (error) {
-        console.error("Error fetching bookings:", error);
+        console.error('Error fetching bookings:', error);
         res.status(500).json({ message: error.message });
+    }
+});
+
+// Add POST route for bookings that was missing
+router.post('/bookings', async (req, res) => {
+    try {
+        const newBooking = new PackageBooking(req.body);
+        const savedBooking = await newBooking.save();
+        res.status(201).json(savedBooking);
+    } catch (error) {
+        console.error('Booking creation error:', error);
+        res.status(400).json({ message: error.message });
     }
 });
 
@@ -65,10 +66,52 @@ router.put('/bookings/:id', async (req, res) => {
             req.params.id,
             { status: req.body.status },
             { new: true }
-        );
+        ).populate('packageId');
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        // Return full booking details in response
         res.json(booking);
     } catch (error) {
         res.status(400).json({ message: error.message });
+    }
+});
+
+router.delete('/bookings/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log('Delete request received for booking:', id);
+
+        // Validate MongoDB ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                message: 'Invalid booking ID format'
+            });
+        }
+
+        const booking = await PackageBooking.findById(id);
+        if (!booking) {
+            return res.status(404).json({
+                message: 'Booking not found or may have been already deleted'
+            });
+        }
+
+        await PackageBooking.findByIdAndDelete(id);
+        
+        console.log(`Successfully deleted booking with ID: ${id}`);
+        res.status(200).json({
+            success: true,
+            message: 'Booking deleted successfully',
+            deletedId: id
+        });
+    } catch (error) {
+        console.error('Error deleting booking:', error);
+        res.status(500).json({
+            message: 'Failed to delete booking',
+            error: error.message
+        });
     }
 });
 

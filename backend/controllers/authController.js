@@ -79,3 +79,27 @@ exports.getUserProfile = async (req, res) => {
         res.status(500).json({ message: 'Error fetching user profile', error: error.message });
     }
 };
+
+// Update user profile
+exports.updateUserProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        user.username = req.body.username || user.username;
+        user.email = req.body.email || user.email;
+        user.phone = req.body.phone || user.phone;
+        user.location = req.body.location || user.location;
+
+        const updatedUser = await user.save();
+        res.json({
+            _id: updatedUser._id,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+            location: updatedUser.location,
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating profile', error: error.message });
+    }
+};
