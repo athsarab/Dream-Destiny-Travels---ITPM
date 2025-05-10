@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { FaPhone, FaHome, FaSignOutAlt, FaCheckCircle, FaClock, FaMapMarkerAlt, FaEnvelope, FaCalendar, FaUser, FaTimes, FaEdit } from "react-icons/fa";
+import { FaPhone, FaHome, FaSignOutAlt, FaCheckCircle, FaClock, FaMapMarkerAlt, FaEnvelope, FaCalendar, FaUser, FaTimes, FaEdit, FaStar } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Profile1 = () => {
@@ -11,6 +11,12 @@ const Profile1 = () => {
   const [editForm, setEditForm] = useState({});
   const [updateLoading, setUpdateLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [stats, setStats] = useState({
+    loading: true,
+    totalBookings: 0,
+    hoursConsulted: 0,
+    successRate: 0
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,20 +54,64 @@ const Profile1 = () => {
       }
 
       try {
-        const response = await axios.get('http://localhost:5000/api/custom-packages/bookings', {
+        // Fetch custom package bookings
+        const customBookingsResponse = await axios.get('http://localhost:5000/api/custom-packages/bookings', {
           headers: {
             Authorization: `Bearer ${userInfo.token}`
           }
         });
-        setBookings(response.data.filter(booking => booking.email === userInfo.email));
+        
+        // Fetch package bookings
+        const packageBookingsResponse = await axios.get('http://localhost:5000/api/packages/bookings', {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`
+          }
+        });
+        
+        // Filter bookings by user email
+        const userCustomBookings = customBookingsResponse.data.filter(booking => booking.email === userInfo.email);
+        const userPackageBookings = packageBookingsResponse.data.filter(booking => booking.email === userInfo.email);
+        
+        // Combine all user bookings
+        const allBookings = [...userCustomBookings, ...userPackageBookings];
+        
+        setBookings(allBookings);
+        
+        // Calculate stats
+        calculateStats(allBookings);
       } catch (error) {
         console.error('Error fetching user bookings:', error);
+        setStats({
+          loading: false,
+          totalBookings: 0,
+          hoursConsulted: 0,
+          successRate: 0
+        });
       }
     };
 
     fetchUserProfile();
     fetchUserBookings();
   }, [navigate]);
+
+  const calculateStats = (bookings) => {
+    // Calculate total bookings
+    const totalBookings = bookings.length;
+    
+    // Calculate hours consulted (estimate based on booking count)
+    const hoursConsulted = Math.round(totalBookings * 2.5);
+    
+    // Calculate success rate based on approved bookings
+    const approvedBookings = bookings.filter(b => b.status === 'approved').length;
+    const successRate = totalBookings > 0 ? Math.round((approvedBookings / totalBookings) * 100) : 0;
+    
+    setStats({
+      loading: false,
+      totalBookings,
+      hoursConsulted,
+      successRate
+    });
+  };
 
   // Sign out handler
   const handleSignOut = () => {
@@ -80,7 +130,7 @@ const Profile1 = () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const response = await axios.put(
-        'http://localhost:5000/api/auth/profile', // <-- FIXED ENDPOINT
+        'http://localhost:5000/api/auth/profile',
         editForm,
         {
           headers: {
@@ -295,68 +345,105 @@ const Profile1 = () => {
                 <h3 className="text-gray-400">Total Bookings</h3>
                 <FaCalendar className="text-blue-400" />
               </div>
-              <p className="text-3xl font-bold mt-2">{bookings.length}</p>
-              <p className="text-green-400 text-sm mt-2">↑ 12% from last month</p>
+              {stats.loading ? (
+                <div className="animate-pulse h-10 bg-gray-700 rounded mt-2"></div>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold mt-2">{stats.totalBookings}</p>
+                  <p className="text-green-400 text-sm mt-2">
+                    {stats.totalBookings > 0 ? "Active traveler" : "Start your journey"}
+                  </p>
+                </>
+              )}
             </div>
             <div className="bg-gray-800 p-6 rounded-xl transform hover:scale-105 transition-transform duration-300">
               <div className="flex items-center justify-between">
                 <h3 className="text-gray-400">Hours Consulted</h3>
                 <FaClock className="text-purple-400" />
               </div>
-              <p className="text-3xl font-bold mt-2">156</p>
-              <p className="text-green-400 text-sm mt-2">↑ 8% from last month</p>
+              {stats.loading ? (
+                <div className="animate-pulse h-10 bg-gray-700 rounded mt-2"></div>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold mt-2">{stats.hoursConsulted}</p>
+                  <p className="text-green-400 text-sm mt-2">Trip planning time</p>
+                </>
+              )}
             </div>
             <div className="bg-gray-800 p-6 rounded-xl transform hover:scale-105 transition-transform duration-300">
               <div className="flex items-center justify-between">
                 <h3 className="text-gray-400">Success Rate</h3>
-                <FaUser className="text-green-400" />
+                <FaStar className="text-yellow-400" />
               </div>
-              <p className="text-3xl font-bold mt-2">98%</p>
-              <p className="text-green-400 text-sm mt-2">↑ 3% from last month</p>
+              {stats.loading ? (
+                <div className="animate-pulse h-10 bg-gray-700 rounded mt-2"></div>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold mt-2">{stats.successRate}%</p>
+                  <p className="text-green-400 text-sm mt-2">Booking approval rate</p>
+                </>
+              )}
             </div>
           </div>
 
           {/* Bookings Table */}
           <div className="bg-gray-800 rounded-xl p-6">
             <h2 className="text-xl font-bold mb-4">Recent Bookings</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-gray-400 border-b border-gray-700">
-                    <th className="text-left py-3 px-4">Service</th>
-                    <th className="text-left py-3 px-4">Date</th>
-                    <th className="text-left py-3 px-4">Time</th>
-                    <th className="text-left py-3 px-4">Location</th>
-                    <th className="text-left py-3 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bookings.map((booking) => (
-                    <tr 
-                      key={booking._id}
-                      className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors"
-                    >
-                      <td className="py-4 px-4">{booking.selectedOptions.service}</td>
-                      <td className="py-4 px-4">{new Date(booking.travelDate).toLocaleDateString()}</td>
-                      <td className="py-4 px-4">{new Date(booking.travelDate).toLocaleTimeString()}</td>
-                      <td className="py-4 px-4">{booking.location}</td>
-                      <td className="py-4 px-4">
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
-                          booking.status === 'approved' 
-                            ? 'bg-green-500/20 text-green-400' 
-                            : booking.status === 'pending'
-                            ? 'bg-yellow-500/20 text-yellow-400'
-                            : 'bg-red-500/20 text-red-400'
-                        }`}>
-                          {booking.status === 'approved' ? <FaCheckCircle size={14} /> : <FaClock size={14} />}
-                          {booking.status}
-                        </span>
-                      </td>
+            {bookings.length === 0 ? (
+              <div className="py-8 text-center text-gray-400">
+                <FaCalendar size={32} className="mx-auto mb-3 text-gray-600" />
+                <p className="text-lg">No bookings found</p>
+                <p className="mt-2">Start planning your adventure today!</p>
+                <button 
+                  onClick={() => navigate('/custom-package')} 
+                  className="mt-4 px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Create Custom Package
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-gray-400 border-b border-gray-700">
+                      <th className="text-left py-3 px-4">Service</th>
+                      <th className="text-left py-3 px-4">Date</th>
+                      <th className="text-left py-3 px-4">Time</th>
+                      <th className="text-left py-3 px-4">Price</th>
+                      <th className="text-left py-3 px-4">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {bookings.map((booking) => (
+                      <tr 
+                        key={booking._id}
+                        className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors"
+                      >
+                        <td className="py-4 px-4">
+                          {booking.selectedOptions?.service || 
+                          (booking.packageId?.name ? `Package: ${booking.packageId.name}` : 'Custom Package')}
+                        </td>
+                        <td className="py-4 px-4">{new Date(booking.travelDate || booking.bookingDate).toLocaleDateString()}</td>
+                        <td className="py-4 px-4">{new Date(booking.travelDate || booking.bookingDate).toLocaleTimeString()}</td>
+                        <td className="py-4 px-4">${booking.totalPrice}</td>
+                        <td className="py-4 px-4">
+                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+                            booking.status === 'approved' 
+                              ? 'bg-green-500/20 text-green-400' 
+                              : booking.status === 'pending'
+                              ? 'bg-yellow-500/20 text-yellow-400'
+                              : 'bg-red-500/20 text-red-400'
+                          }`}>
+                            {booking.status === 'approved' ? <FaCheckCircle size={14} /> : <FaClock size={14} />}
+                            {booking.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </main>

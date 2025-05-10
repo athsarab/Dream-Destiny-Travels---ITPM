@@ -181,15 +181,23 @@ const PackageForm = ({ onPackageAdded }) => {
             className="w-full p-4 border border-dark-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent bg-dark-100 text-white placeholder-dark-400"
             required
           />
-          <input
-            type="text"
-            name="location"
-            placeholder="Location"
-            value={formData.location}
-            onChange={handleChange}
-            className="w-full p-4 border border-dark-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent bg-dark-100 text-white placeholder-dark-400"
-            required
-          />
+<select
+  name="location"
+  value={formData.location}
+  onChange={handleChange}
+  className="w-full p-4 border border-dark-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent bg-dark-100 text-white placeholder-dark-400"
+  required
+>
+  <option value="">Select Location</option>
+  <option value="Colombo">Colombo</option>
+  <option value="Kandy">Kandy</option>
+  <option value="Galle">Galle</option>
+  <option value="Nuwara Eliya">Nuwara Eliya</option>
+  <option value="Jaffna">Jaffna</option>
+  <option value="Trincomalee">Trincomalee</option>
+  <option value="Matale">Matale</option>
+</select>
+
           <input
             type="number"
             name="maxPax"

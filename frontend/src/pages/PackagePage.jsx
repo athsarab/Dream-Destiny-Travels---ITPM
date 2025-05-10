@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import PackageBookingForm from '../components/Client/PackageBookingForm';
+import WeatherAlert from '../components/Weather/WeatherAlert';
 
 const PackagePage = () => {
   const [package_, setPackage] = useState(null);
@@ -52,7 +53,18 @@ const PackagePage = () => {
   return (
     <div className="bg-dark-100 text-white p-6 pt-24 min-h-screen overflow-y-auto">
       <div className="max-w-4xl mx-auto bg-dark-200 rounded-xl shadow-lg overflow-hidden mb-6">
+
         <h1 className="text-3xl font-bold p-6 border-b border-dark-300">{package_.name || 'Unnamed Package'}</h1>
+        
+        {/* Add Weather Alert */}
+        {package_ && package_.location && (
+          <div className="px-6 pt-4">
+            <WeatherAlert 
+              location={package_.location} 
+              travelDate={new Date()}  // Default to current date for package display
+            />
+          </div>
+        )}
         {package_.imageUrl && (
           <img 
             src={package_.imageUrl} 
