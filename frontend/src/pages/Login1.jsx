@@ -16,9 +16,11 @@ const Login1 = () => {
         localStorage.setItem('userInfo', JSON.stringify(response.data));
         if (response.data.role === 'admin') {
           navigate('/admin');
+        } else if(response.data.role === 'employee') {
+          navigate('/employee-manager');
         } else {
           navigate('/');
-        }
+        } 
       }
     } catch (error) {
       alert('Login failed: ' + (error.response?.data?.message || error.message));
