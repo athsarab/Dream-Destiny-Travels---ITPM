@@ -10,7 +10,7 @@ import EditPackagePage from './pages/EditPackagePage.jsx';
 // Client Pages
 import HomePage from './pages/HomePage.jsx';
 import PackagePage from './pages/PackagePage.jsx';
-import CustomPackageCreate from './pages/CustomPackageCreate.jsx';
+import CustomPackageCreate from './pages/CustomPackageCreate.jsx'; 
 
 // Employee Manager Pages
 import EmployeeManagerDashboard from './pages/EmployeeManagerDashboard.jsx';
